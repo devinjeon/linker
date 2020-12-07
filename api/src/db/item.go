@@ -7,6 +7,14 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
+func (c *DB) marshalLinkItem(link Link) (map[string]*dynamodb.AttributeValue, error) {
+	marshaledLink, err := dynamodbattribute.MarshalMap(link)
+	if err != nil {
+		fmt.Printf("Failed to marshal Link item, %v", err)
+	}
+	return marshaledLink, err
+}
+
 func (c *DB) unmarshalLinkItem(marshaledItem map[string]*dynamodb.AttributeValue) (Link, error) {
 	item := Link{}
 	err := dynamodbattribute.UnmarshalMap(marshaledItem, &item)
@@ -46,4 +54,55 @@ func (c *DB) GetURL(id string) (string, error) {
 
 	url = link.URL
 	return url, nil
+}
+
+// PutURL create a new item or replace item if the id already exists
+func (c *DB) PutURL(id string, url string) error {
+	fmt.Println(id, url)
+	newLink := Link{
+		ID:  id,
+		URL: url,
+	}
+
+	marshaledLink, err := c.marshalLinkItem(newLink)
+	if err != nil {
+		return ErrMarshalling
+	}
+
+	fmt.Println(marshaledLink)
+	_, err = c.client.PutItem(&dynamodb.PutItemInput{
+		TableName: aws.String(c.TableName),
+		Item:      marshaledLink,
+	})
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return ErrDBOperation
+	}
+
+	return nil
+}
+
+// DeleteURL delete a item from id
+func (c *DB) DeleteURL(id string) error {
+	_, err := c.GetURL(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.client.DeleteItem(&dynamodb.DeleteItemInput{
+		TableName: aws.String(c.TableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			"ID": {
+				S: aws.String(id),
+			},
+		},
+	})
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return ErrDBOperation
+	}
+
+	return nil
 }
