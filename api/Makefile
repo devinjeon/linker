@@ -1,6 +1,6 @@
-build: src/main.go
+build: src
 	cd src && \
-		GOOS=linux go build -o linker main.go && \
+		GOOS=linux go build && \
 		zip ../deploy.zip linker && \
 		rm linker
 clean:

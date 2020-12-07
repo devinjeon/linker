@@ -7,7 +7,7 @@ resource "aws_lambda_function" "lambda" {
   filename      = local.target_file
   function_name = local.name
   role          = aws_iam_role.iam_role.arn
-  handler       = "main"
+  handler       = "linker"
   runtime       = "go1.x"
 
   source_code_hash = filebase64sha256(local.target_file)
@@ -92,10 +92,10 @@ resource "aws_iam_policy" "dynamodb" {
 resource "aws_dynamodb_table" "dynamodb" {
   name = local.name
   billing_mode = "PAY_PER_REQUEST"
-  hash_key = "id"
+  hash_key = "ID"
 
   attribute {
-    name = "id"
+    name = "ID"
     type = "S"
   }
 
