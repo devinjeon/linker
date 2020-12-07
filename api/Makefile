@@ -5,3 +5,8 @@ build: src
 		rm linker
 clean:
 	rm -f src/linker deploy.zip
+plan: build
+	terraform plan -out=terraform.tfplan
+apply:
+	terraform apply "terraform.tfplan"
+	rm -f deploy.zip
