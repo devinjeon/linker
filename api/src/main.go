@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"linker/db"
@@ -50,7 +49,6 @@ func upsert(req Request) (Response, error) {
 	id := req.PathParameters["id"]
 	body := req.Body
 
-	fmt.Println(body)
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(body), &data); err != nil {
 		return Response{StatusCode: 400}, err

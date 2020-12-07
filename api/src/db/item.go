@@ -58,7 +58,6 @@ func (c *DB) GetURL(id string) (string, error) {
 
 // PutURL create a new item or replace item if the id already exists
 func (c *DB) PutURL(id string, url string) error {
-	fmt.Println(id, url)
 	newLink := Link{
 		ID:  id,
 		URL: url,
@@ -69,7 +68,6 @@ func (c *DB) PutURL(id string, url string) error {
 		return ErrMarshalling
 	}
 
-	fmt.Println(marshaledLink)
 	_, err = c.client.PutItem(&dynamodb.PutItemInput{
 		TableName: aws.String(c.TableName),
 		Item:      marshaledLink,
