@@ -12,6 +12,10 @@ terraform {
   }
 }
 
-provider "aws" {
+locals {
   region = "ap-northeast-2"
+}
+
+provider "aws" {
+  region = local.region
 }
