@@ -4,13 +4,13 @@ locals {
 }
 
 resource "aws_lambda_function" "lambda" {
-  filename      = local.target_file
+  filename      = data.archive_file.lambda_deployment.output_path
   function_name = local.name
   role          = aws_iam_role.iam_role.arn
   handler       = "linker"
   runtime       = "go1.x"
 
-  source_code_hash = filebase64sha256(local.target_file)
+  source_code_hash = data.archive_file.lambda_deployment.output_base64sha256
 
   environment {
     variables = {
@@ -22,6 +22,12 @@ resource "aws_lambda_function" "lambda" {
     aws_iam_role_policy_attachment.logging,
     aws_iam_role_policy_attachment.dynamodb,
   ]
+}
+
+data "archive_file" "lambda_deployment" {
+  type        = "zip"
+  source_file = "src/linker"
+  output_path = "deploy.zip"
 }
 
 resource "aws_iam_role" "iam_role" {
