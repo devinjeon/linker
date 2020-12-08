@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 3.0"
     }
+    cloudflare = {
+      source = "cloudflare/cloudflare"
+      version = "~> 2.0"
+    }
   }
   backend "s3" {
     bucket = "devin-terraform"
@@ -19,3 +23,5 @@ locals {
 provider "aws" {
   region = local.region
 }
+
+provider "cloudflare" {}

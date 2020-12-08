@@ -185,3 +185,88 @@ resource "aws_api_gateway_method_settings" "api" {
     throttling_rate_limit = 100
   }
 }
+
+variable "root_domain" {
+  type = string
+}
+
+locals {
+  custom_domain_name = "linker"
+  custom_domain = "${local.custom_domain_name}.${var.root_domain}"
+}
+
+resource "aws_acm_certificate" "domain" {
+  domain_name       = local.custom_domain
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "domain" {
+  certificate_arn = aws_acm_certificate.domain.arn
+  validation_record_fqdns = [cloudflare_record.domain_validation.name]
+}
+
+resource "aws_api_gateway_domain_name" "domain" {
+  domain_name              = local.custom_domain
+  regional_certificate_arn = aws_acm_certificate_validation.domain.certificate_arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
+resource "aws_api_gateway_base_path_mapping" "domain" {
+  api_id      = aws_api_gateway_rest_api.api.id
+  stage_name  = aws_api_gateway_deployment.api.stage_name
+  domain_name = aws_api_gateway_domain_name.domain.domain_name
+}
+
+# === Cloudflare ===
+locals {
+  # NOTE(devin): `domain_validation_options` is 'set' type
+  # (ref: https://github.com/hashicorp/terraform-provider-aws/issues/10098#issuecomment-663562342)
+  validation = tolist(aws_acm_certificate.domain.domain_validation_options)[0]
+  cloudflare_zone_id = data.cloudflare_zones.domain.zones[0].id
+}
+
+data "cloudflare_zones" "domain" {
+  filter {
+    name = var.root_domain
+  }
+}
+
+# 1. Create domain record to validate ACM certificate
+resource "cloudflare_record" "domain_validation" {
+  name    = local.validation.resource_record_name
+  zone_id = local.cloudflare_zone_id
+
+  # NOTE(devin): `resource_record_value` has suffix '.' but Cloudflare removes it automatically.
+  value   = trimsuffix(local.validation.resource_record_value, ".")
+  type    = local.validation.resource_record_type
+ }
+
+# 2. Create record -> links.{your_domain}
+resource "cloudflare_record" "domain" {
+  name    = local.custom_domain_name
+  zone_id = local.cloudflare_zone_id
+
+  value   = aws_api_gateway_domain_name.domain.regional_domain_name
+  type    = "CNAME"
+  proxied = true
+}
+
+# 3. Make page rules for forwarding url
+resource "cloudflare_page_rule" "domain" {
+  zone_id = local.cloudflare_zone_id
+  target  = "${var.root_domain}/~*"
+
+  actions {
+    forwarding_url {
+      url         = "https://${local.custom_domain}/$1"
+      status_code = "301"
+    }
+  }
+}
