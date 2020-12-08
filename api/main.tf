@@ -164,8 +164,6 @@ resource "aws_api_gateway_deployment" "api" {
     aws_lambda_permission.api,
   ]
 
-  stage_description = data.archive_file.lambda_deployment.output_base64sha256
-
   rest_api_id = aws_api_gateway_rest_api.api.id
   stage_name  = "main"
 }
