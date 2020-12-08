@@ -1,8 +1,5 @@
 module db
 
-go 1.12
+go 1.15
 
-require (
-	github.com/aws/aws-lambda-go v1.20.0 // indirect
-	github.com/aws/aws-sdk-go v1.36.2
-)
+require github.com/aws/aws-sdk-go v1.36.3
