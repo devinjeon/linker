@@ -189,12 +189,12 @@ variable "root_domain" {
 }
 
 locals {
-  custom_domain_name = "linker"
-  custom_domain      = "${local.custom_domain_name}.${var.root_domain}"
+  api_domain_name = "api.linker"
+  api_domain      = "${local.api_domain_name}.${var.root_domain}"
 }
 
 resource "aws_acm_certificate" "domain" {
-  domain_name       = local.custom_domain
+  domain_name       = local.api_domain
   validation_method = "DNS"
 
   lifecycle {
@@ -208,7 +208,7 @@ resource "aws_acm_certificate_validation" "domain" {
 }
 
 resource "aws_api_gateway_domain_name" "domain" {
-  domain_name              = local.custom_domain
+  domain_name              = local.api_domain
   regional_certificate_arn = aws_acm_certificate_validation.domain.certificate_arn
 
   endpoint_configuration {
@@ -248,12 +248,11 @@ resource "cloudflare_record" "domain_validation" {
 
 # 2. Create record -> links.{your_domain}
 resource "cloudflare_record" "domain" {
-  name    = local.custom_domain_name
+  name    = local.api_domain_name
   zone_id = local.cloudflare_zone_id
 
-  value   = aws_api_gateway_domain_name.domain.regional_domain_name
-  type    = "CNAME"
-  proxied = true
+  value = aws_api_gateway_domain_name.domain.regional_domain_name
+  type  = "CNAME"
 }
 
 # 3. Make page rules for forwarding url
@@ -263,7 +262,7 @@ resource "cloudflare_page_rule" "domain" {
 
   actions {
     forwarding_url {
-      url         = "https://${local.custom_domain}/$1"
+      url         = "https://${local.api_domain}/$1"
       status_code = "301"
     }
   }
