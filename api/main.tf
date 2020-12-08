@@ -1,5 +1,5 @@
 locals {
-  name = "linker"
+  name        = "linker"
   target_file = "deploy.zip"
 }
 
@@ -57,10 +57,10 @@ resource "aws_cloudwatch_log_group" "logging" {
 
 data "aws_iam_policy_document" "logging" {
   statement {
-    actions   = [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents"
     ]
     resources = [aws_cloudwatch_log_group.logging.arn]
   }
@@ -96,9 +96,9 @@ resource "aws_iam_policy" "dynamodb" {
 }
 
 resource "aws_dynamodb_table" "dynamodb" {
-  name = local.name
+  name         = local.name
   billing_mode = "PAY_PER_REQUEST"
-  hash_key = "ID"
+  hash_key     = "ID"
 
   attribute {
     name = "ID"
@@ -107,9 +107,9 @@ resource "aws_dynamodb_table" "dynamodb" {
 
   ttl {
     attribute_name = "time_to_exist"
-    enabled = true
+    enabled        = true
   }
-}  
+}
 
 resource "aws_iam_role_policy_attachment" "dynamodb" {
   role       = aws_iam_role.iam_role.name
@@ -129,7 +129,7 @@ resource "aws_api_gateway_rest_api" "api" {
 resource "aws_api_gateway_resource" "api" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part = "{id}"
+  path_part   = "{id}"
 }
 
 resource "aws_api_gateway_method" "api" {
@@ -171,7 +171,7 @@ resource "aws_api_gateway_deployment" "api" {
 }
 
 resource "aws_api_gateway_method_settings" "api" {
-  depends_on  = [
+  depends_on = [
     aws_api_gateway_method.api,
     aws_api_gateway_deployment.api,
   ]
@@ -182,7 +182,7 @@ resource "aws_api_gateway_method_settings" "api" {
 
   settings {
     throttling_burst_limit = 200
-    throttling_rate_limit = 100
+    throttling_rate_limit  = 100
   }
 }
 
@@ -192,7 +192,7 @@ variable "root_domain" {
 
 locals {
   custom_domain_name = "linker"
-  custom_domain = "${local.custom_domain_name}.${var.root_domain}"
+  custom_domain      = "${local.custom_domain_name}.${var.root_domain}"
 }
 
 resource "aws_acm_certificate" "domain" {
@@ -205,7 +205,7 @@ resource "aws_acm_certificate" "domain" {
 }
 
 resource "aws_acm_certificate_validation" "domain" {
-  certificate_arn = aws_acm_certificate.domain.arn
+  certificate_arn         = aws_acm_certificate.domain.arn
   validation_record_fqdns = [cloudflare_record.domain_validation.name]
 }
 
@@ -228,7 +228,7 @@ resource "aws_api_gateway_base_path_mapping" "domain" {
 locals {
   # NOTE(devin): `domain_validation_options` is 'set' type
   # (ref: https://github.com/hashicorp/terraform-provider-aws/issues/10098#issuecomment-663562342)
-  validation = tolist(aws_acm_certificate.domain.domain_validation_options)[0]
+  validation         = tolist(aws_acm_certificate.domain.domain_validation_options)[0]
   cloudflare_zone_id = data.cloudflare_zones.domain.zones[0].id
 }
 
@@ -244,9 +244,9 @@ resource "cloudflare_record" "domain_validation" {
   zone_id = local.cloudflare_zone_id
 
   # NOTE(devin): `resource_record_value` has suffix '.' but Cloudflare removes it automatically.
-  value   = trimsuffix(local.validation.resource_record_value, ".")
-  type    = local.validation.resource_record_type
- }
+  value = trimsuffix(local.validation.resource_record_value, ".")
+  type  = local.validation.resource_record_type
+}
 
 # 2. Create record -> links.{your_domain}
 resource "cloudflare_record" "domain" {
