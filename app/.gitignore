@@ -21,3 +21,15 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+*.log
+logs
+**/*.backup.*
+**/*.back.*
+bower_components
+
+psd
+thumb
+sketch
+
+.eslintcache
