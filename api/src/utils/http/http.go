@@ -5,16 +5,34 @@ import (
 	"fmt"
 	"net/http"
 	u "net/url"
+	"runtime/debug"
 )
 
 var client = &http.Client{}
 
-func get(url string, headers map[string]string, queryParams map[string]string) (responseBody string, statusCode int) {
+const (
+	// HTTPGet represents GET method.
+	HTTPGet = "GET"
+	// HTTPPost represents POST method.
+	HTTPPost = "POST"
+	// HTTPDelete represents DELETE method.
+	HTTPDelete = "DELETE"
+	// HTTPPut represents PUT method.
+	HTTPPut = "PUT"
+)
+
+// Response is result type that HTTP request returns.
+type Response struct {
+	statusCode int
+	body       string
+}
+
+func request(method string, url string, queryParams map[string]string, headers map[string]string, data []byte) (response *Response, err error) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("[ERROR]http.Get(%s, %v, %v):\n%s\n", url, headers, queryParams, err)
-			responseBody = ""
-			statusCode = -1
+			fmt.Printf("[ERROR]http.%s(%s, %v, %v):\n%s\n", method, url, headers, queryParams, err)
+			debug.PrintStack()
+			response = nil
 		}
 	}()
 
@@ -31,7 +49,7 @@ func get(url string, headers map[string]string, queryParams map[string]string) (
 	}
 	newURL.RawQuery = q.Encode()
 
-	req, err := http.NewRequest("GET", newURL.String(), nil)
+	req, err := http.NewRequest(method, newURL.String(), bytes.NewBuffer(data))
 	if err != nil {
 		panic(err)
 	}
@@ -54,7 +72,29 @@ func get(url string, headers map[string]string, queryParams map[string]string) (
 		panic(err)
 	}
 
-	responseBody = buf.String()
-	statusCode = resp.StatusCode
+	response = &Response{
+		body:       buf.String(),
+		statusCode: resp.StatusCode,
+	}
 	return
+}
+
+// Get requests HTTP call with GET method
+func Get(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
+	return request(HTTPGet, url, queryParams, headers, body)
+}
+
+// Post requests HTTP call with POST method
+func Post(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
+	return request(HTTPGet, url, queryParams, headers, body)
+}
+
+// Delete requests HTTP call with DELETE method
+func Delete(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
+	return request(HTTPGet, url, queryParams, headers, body)
+}
+
+// Put requests HTTP call with PUT method
+func Put(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
+	return request(HTTPGet, url, queryParams, headers, body)
 }
