@@ -11,14 +11,14 @@ var sess = session.Must(session.NewSessionWithOptions(session.Options{
 
 // DB is a struct to handle DynamoDB
 type DB struct {
-	TableName string
+	tableName string
 	client    *dynamodb.DynamoDB
 }
 
 // GetDB creates a new client of DynamoDB with the specified table name
 func GetDB(tableName string) *DB {
 	return &DB{
-		TableName: tableName,
+		tableName: tableName,
 		client:    dynamodb.New(sess),
 	}
 }

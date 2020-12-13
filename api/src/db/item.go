@@ -28,7 +28,7 @@ func (c *DB) unmarshalLinkItem(marshaledItem map[string]*dynamodb.AttributeValue
 func (c *DB) GetURL(id string) (string, error) {
 	url := ""
 	result, err := c.client.GetItem(&dynamodb.GetItemInput{
-		TableName: aws.String(c.TableName),
+		TableName: aws.String(c.tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"ID": {
 				S: aws.String(id),
@@ -69,7 +69,7 @@ func (c *DB) PutURL(id string, url string) error {
 	}
 
 	_, err = c.client.PutItem(&dynamodb.PutItemInput{
-		TableName: aws.String(c.TableName),
+		TableName: aws.String(c.tableName),
 		Item:      marshaledLink,
 	})
 
@@ -89,7 +89,7 @@ func (c *DB) DeleteURL(id string) error {
 	}
 
 	_, err = c.client.DeleteItem(&dynamodb.DeleteItemInput{
-		TableName: aws.String(c.TableName),
+		TableName: aws.String(c.tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			"ID": {
 				S: aws.String(id),
