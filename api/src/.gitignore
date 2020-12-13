@@ -1,7 +1,4 @@
 
-# Created by https://www.toptal.com/developers/gitignore/api/go
-# Edit at https://www.toptal.com/developers/gitignore?templates=go
-
 ### Go ###
 # Binaries for programs and plugins
 *.exe
@@ -23,4 +20,22 @@
 /vendor/
 /Godeps/
 
-# End of https://www.toptal.com/developers/gitignore/api/go
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+Sessionx.vim
+
+# Temporary
+.netrwhist
+*~
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
