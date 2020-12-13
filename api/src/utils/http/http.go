@@ -23,8 +23,8 @@ const (
 
 // Response is result type that HTTP request returns.
 type Response struct {
-	statusCode int
-	body       string
+	StatusCode int
+	Body       []byte
 }
 
 func request(method string, url string, queryParams map[string]string, headers map[string]string, data []byte) (response *Response, err error) {
@@ -73,8 +73,8 @@ func request(method string, url string, queryParams map[string]string, headers m
 	}
 
 	response = &Response{
-		body:       buf.String(),
-		statusCode: resp.StatusCode,
+		Body:       buf.Bytes(),
+		StatusCode: resp.StatusCode,
 	}
 	return
 }
