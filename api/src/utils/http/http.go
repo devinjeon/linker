@@ -30,7 +30,7 @@ type Response struct {
 func request(method string, url string, queryParams map[string]string, headers map[string]string, data []byte) (response *Response, err error) {
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("[ERROR]http.%s(%s, %v, %v):\n%s\n", method, url, headers, queryParams, err)
+			fmt.Printf("[ERROR]http.%s(%s, %v, %v):\n%v\n", method, url, headers, queryParams, err)
 			debug.PrintStack()
 			response = nil
 		}

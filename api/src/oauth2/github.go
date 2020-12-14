@@ -58,7 +58,7 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 
 	defer func() {
 		if err := recover(); err != nil {
-			fmt.Printf("[ERROR]oauth2.github:\nresponse: %s\nerror: %s\n", string(resp.Body), err)
+			fmt.Printf("[ERROR]oauth2.github:\nresponse: %s\nerror: %v\n", string(resp.Body), err)
 			debug.PrintStack()
 		}
 	}()
