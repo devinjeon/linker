@@ -23,10 +23,10 @@ func (o *GitHub) GetAuthorizeURI() string {
 
 	q := authURI.Query()
 	q.Set("client_id", o.ClientID)
-	authURI.RawQuery = q.Encode()
 	if o.RedirectURI != "" {
 		q.Set("redirect_uri", o.RedirectURI)
 	}
+	authURI.RawQuery = q.Encode()
 	return authURI.String()
 }
 
