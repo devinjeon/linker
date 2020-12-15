@@ -10,7 +10,7 @@ type Token struct {
 type oauth2 interface {
 	GetAuthorizeURI() string
 	ExchangeToken(code string) (*Token, error)
-	ValidateToken(accessToken string) (bool, error)
-	RefreshToken(refreshToken string) (*Token, error)
-	RevokeToken(accessToken string) bool
+	ValidateToken(token *Token) (bool, error)
+	RefreshToken(token *Token) (bool, error)
+	RevokeToken(token *Token) (bool, error)
 }
