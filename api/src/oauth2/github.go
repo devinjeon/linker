@@ -1,6 +1,7 @@
 package oauth2
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -72,4 +73,38 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 		TokenType:    responseData["token_type"].(string),
 	}
 	return token, nil
+}
+
+// oauthTokenAPI returns GitHub OAuth2 token API URL
+func (o *GitHub) oauthTokenAPI() string {
+	return fmt.Sprintf("https://api.github.com/applications/%s/token", o.ClientID)
+}
+
+// ValidateToken checks if the accessToken is valid.
+func (o *GitHub) ValidateToken(token *Token) (bool, error) {
+	apiURL := o.oauthTokenAPI()
+
+	auth := o.ClientID + ":" + o.ClientSecret
+	basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+	headers := map[string]string{
+		"Authorization": "Basic " + basicAuth,
+	}
+	data := map[string]string{
+		"access_token": token.AccessToken,
+	}
+
+	dataJSON, _ := json.Marshal(data)
+	resp, err := http.Post(apiURL, nil, headers, dataJSON)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode == 200 {
+		return true, nil
+	}
+	if resp.StatusCode == 404 {
+		return false, nil
+	}
+
+	return false, ErrOAuthServer
 }
