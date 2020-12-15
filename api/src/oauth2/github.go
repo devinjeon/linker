@@ -108,3 +108,8 @@ func (o *GitHub) ValidateToken(token *Token) (bool, error) {
 
 	return false, ErrOAuthServer
 }
+
+// RefreshToken does nothing because GitHub OAuth2 doesn't expire access token.
+func (o *GitHub) RefreshToken(token *Token) (bool, error) {
+	return false, nil
+}
