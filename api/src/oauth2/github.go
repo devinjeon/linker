@@ -2,10 +2,10 @@ package oauth2
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"linker/utils/http"
 	u "net/url"
-	"runtime/debug"
 )
 
 // GitHub is struct for handling GitHub OAuth2 flow
@@ -51,17 +51,20 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 	if resp.StatusCode != 200 {
 		return nil, ErrOAuthServer
 	}
+
+	// Parse reponse body
 	var responseData map[string]interface{}
 	if err := json.Unmarshal(resp.Body, &responseData); err != nil {
 		return nil, ErrMarshalling
 	}
 
-	defer func() {
-		if err := recover(); err != nil {
-			fmt.Printf("[ERROR]oauth2.github:\nresponse: %s\nerror: %v\n", string(resp.Body), err)
-			debug.PrintStack()
+	if _, isValid := responseData["access_token"]; !isValid {
+		errorMessage, _ := responseData["error_description"]
+		if errorMessage == nil {
+			return nil, ErrOAuthServer
 		}
-	}()
+		return nil, errors.New(errorMessage.(string))
+	}
 
 	token = &Token{
 		AccessToken:  responseData["access_token"].(string),
