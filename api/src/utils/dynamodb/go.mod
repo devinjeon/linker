@@ -1,4 +1,4 @@
-module db
+module dynamodb
 
 go 1.15
 

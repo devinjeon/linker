@@ -1,4 +1,4 @@
-package db
+package dynamodb
 
 import "errors"
 

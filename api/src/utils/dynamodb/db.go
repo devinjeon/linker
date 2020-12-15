@@ -1,4 +1,4 @@
-package db
+package dynamodb
 
 import (
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -15,8 +15,8 @@ type DB struct {
 	client    *dynamodb.DynamoDB
 }
 
-// GetDB creates a new client of DynamoDB with the specified table name
-func GetDB(tableName string) *DB {
+// NewDB creates a new client of DynamoDB with the specified table name
+func NewDB(tableName string) *DB {
 	return &DB{
 		tableName: tableName,
 		client:    dynamodb.New(sess),
