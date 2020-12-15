@@ -166,6 +166,20 @@ resource "aws_api_gateway_deployment" "api" {
 
   rest_api_id = aws_api_gateway_rest_api.api.id
   stage_name  = "main"
+
+  # NOTE: It is recommended to enable the resource lifecycle configuration block
+  # create_before_destroy argument in this resource configuration to properly
+  # order redeployments in Terraform.
+  # ref: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/api_gateway_deployment
+  triggers = {
+    redeployment = sha1(join(",", list(
+      jsonencode(aws_api_gateway_integration.api),
+    )))
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_api_gateway_method_settings" "api" {
