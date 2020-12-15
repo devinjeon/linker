@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/aws/aws-lambda-go v1.20.0
+	linker/apis/auth v0.0.0
 	linker/apis/links v0.0.0
 	linker/utils/dynamodb v0.0.0
 	linker/utils/http v0.0.0
@@ -11,6 +12,7 @@ require (
 )
 
 replace (
+	linker/apis/auth v0.0.0 => ./apis/auth
 	linker/apis/links v0.0.0 => ./apis/links
 	linker/utils/dynamodb v0.0.0 => ./utils/dynamodb
 	linker/utils/http v0.0.0 => ./utils/http

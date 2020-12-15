@@ -1,6 +1,7 @@
 package main
 
 import (
+	"linker/apis/auth"
 	"linker/apis/links"
 	"strings"
 
@@ -40,6 +41,8 @@ func Handler(req Request) (Response, error) {
 	switch resource {
 	case "links":
 		return links.Handler(req)
+	case "auth":
+		return auth.Handler(req)
 	default:
 		return badRequest, nil
 	}
