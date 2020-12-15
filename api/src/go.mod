@@ -7,10 +7,12 @@ require (
 	linker/apis/links v0.0.0
 	linker/utils/dynamodb v0.0.0
 	linker/utils/http v0.0.0
+	linker/utils/oauth2 v0.0.0
 )
 
 replace (
 	linker/apis/links v0.0.0 => ./apis/links
 	linker/utils/dynamodb v0.0.0 => ./utils/dynamodb
 	linker/utils/http v0.0.0 => ./utils/http
+	linker/utils/oauth2 v0.0.0 => ./utils/oauth2
 )
