@@ -113,3 +113,30 @@ func (o *GitHub) ValidateToken(token *Token) (bool, error) {
 func (o *GitHub) RefreshToken(token *Token) (bool, error) {
 	return false, nil
 }
+
+// RevokeToken revokes access token and authorization
+func (o *GitHub) RevokeToken(token *Token) (bool, error) {
+	apiURL := o.oauthTokenAPI()
+
+	auth := o.ClientID + ":" + o.ClientSecret
+	basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+	headers := map[string]string{
+		"Authorization": "Basic " + basicAuth,
+	}
+	data := map[string]string{
+		"access_token": token.AccessToken,
+	}
+
+	dataJSON, _ := json.Marshal(data)
+	resp, err := http.Delete(apiURL, nil, headers, dataJSON)
+	if err != nil {
+		return false, err
+	}
+
+	// Success
+	if resp.StatusCode == 204 {
+		return true, nil
+	}
+
+	return false, ErrOAuthServer
+}
