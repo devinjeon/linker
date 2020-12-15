@@ -1,6 +1,9 @@
 package main
 
 import (
+	"linker/apis/links"
+	"strings"
+
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 )
@@ -9,25 +12,36 @@ import (
 // so it should use Request and Response types from events.APIGatewayProxy*.
 
 // Response is of type APIGatewayProxyResponse
-type Response events.APIGatewayProxyResponse
+type Response = events.APIGatewayProxyResponse
 
 // Request is of type APIGatewayProxyRequest
-type Request events.APIGatewayProxyRequest
+type Request = events.APIGatewayProxyRequest
 
 // Handler is our lambda handler invoked by the `lambda.Start` function call
 func Handler(req Request) (Response, error) {
-	method := req.HTTPMethod
-	switch method {
-	case "GET":
-		return redirect(req)
-	case "POST":
-		return upsert(req)
-	case "DELETE":
-		return delete(req)
-	case "PUT":
-		return upsert(req)
+	badRequest := Response{StatusCode: 400}
+
+	path, ok := req.PathParameters["proxy"]
+	if !ok {
+		return badRequest, nil
+	}
+
+	pathSplited := strings.SplitN(path, "/", 2)
+	if len(pathSplited) == 0 {
+		return badRequest, nil
+	}
+	subPath := ""
+	if len(pathSplited) > 1 {
+		subPath = pathSplited[1]
+	}
+	req.PathParameters["proxy"] = subPath
+
+	resource := pathSplited[0]
+	switch resource {
+	case "links":
+		return links.Handler(req)
 	default:
-		return Response{StatusCode: 405}, nil
+		return badRequest, nil
 	}
 }
 

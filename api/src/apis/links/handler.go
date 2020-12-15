@@ -1,18 +1,38 @@
-package main
+package links
 
 import (
 	"encoding/json"
-	"linker/db"
-	"os"
+	"github.com/aws/aws-lambda-go/events"
+	db "linker/utils/dynamodb"
 )
 
-var tableName = os.Getenv("DYNAMODB_TABLE_NAME")
-var dbClient = db.GetDB(tableName)
+// Response is of type APIGatewayProxyResponse
+type Response = events.APIGatewayProxyResponse
+
+// Request is of type APIGatewayProxyRequest
+type Request = events.APIGatewayProxyRequest
+
+// Handler returns links API response
+func Handler(req Request) (Response, error) {
+	method := req.HTTPMethod
+	switch method {
+	case "GET":
+		return redirect(req)
+	case "POST":
+		return upsert(req)
+	case "DELETE":
+		return delete(req)
+	case "PUT":
+		return upsert(req)
+	default:
+		return Response{StatusCode: 405}, nil
+	}
+}
 
 func redirect(req Request) (Response, error) {
-	id := req.PathParameters["id"]
+	id := req.PathParameters["proxy"]
 
-	url, err := dbClient.GetURL(id)
+	url, err := getURL(id)
 	switch err {
 	case db.ErrDBOperation:
 		return Response{StatusCode: 500}, err
@@ -33,7 +53,7 @@ func redirect(req Request) (Response, error) {
 }
 
 func upsert(req Request) (Response, error) {
-	id := req.PathParameters["id"]
+	id := req.PathParameters["proxy"]
 	body := req.Body
 
 	var data map[string]interface{}
@@ -42,7 +62,7 @@ func upsert(req Request) (Response, error) {
 	}
 	url := data["url"].(string)
 
-	err := dbClient.PutURL(id, url)
+	err := putURL(id, url)
 	switch err {
 	case db.ErrDBOperation:
 		return Response{StatusCode: 500}, err
@@ -54,9 +74,9 @@ func upsert(req Request) (Response, error) {
 }
 
 func delete(req Request) (Response, error) {
-	id := req.PathParameters["id"]
+	id := req.PathParameters["proxy"]
 
-	err := dbClient.DeleteURL(id)
+	err := deleteURL(id)
 	switch err {
 	case db.ErrDBOperation:
 		return Response{StatusCode: 500}, err
