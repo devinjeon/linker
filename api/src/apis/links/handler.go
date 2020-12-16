@@ -2,8 +2,10 @@ package links
 
 import (
 	"encoding/json"
-	"github.com/aws/aws-lambda-go/events"
 	db "linker/utils/dynamodb"
+	"strings"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
 // Response is of type APIGatewayProxyResponse
@@ -30,7 +32,7 @@ func Handler(req Request) (Response, error) {
 }
 
 func redirect(req Request) (Response, error) {
-	id := req.PathParameters["proxy"]
+	id := strings.TrimPrefix(req.Path, "/")
 
 	url, err := getURL(id)
 	switch err {
@@ -53,7 +55,7 @@ func redirect(req Request) (Response, error) {
 }
 
 func upsert(req Request) (Response, error) {
-	id := req.PathParameters["proxy"]
+	id := strings.TrimPrefix(req.Path, "/")
 	body := req.Body
 
 	var data map[string]interface{}
@@ -74,7 +76,7 @@ func upsert(req Request) (Response, error) {
 }
 
 func delete(req Request) (Response, error) {
-	id := req.PathParameters["proxy"]
+	id := strings.TrimPrefix(req.Path, "/")
 
 	err := deleteURL(id)
 	switch err {

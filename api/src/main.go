@@ -12,42 +12,81 @@ import (
 // This Lambda function is triggered by API Gateway
 // so it should use Request and Response types from events.APIGatewayProxy*.
 
-// Response is of type APIGatewayProxyResponse
-type Response = events.APIGatewayProxyResponse
+type (
+	// Response is of type APIGatewayProxyResponse
+	Response = events.APIGatewayProxyResponse
+	// Request is of type APIGatewayProxyRequest
+	Request = events.APIGatewayProxyRequest
+	// Handler is type of handler function
+	Handler func(Request) (Response, error)
+)
 
-// Request is of type APIGatewayProxyRequest
-type Request = events.APIGatewayProxyRequest
+type router struct {
+	handlers map[string]Handler
+}
 
-// Handler is our lambda handler invoked by the `lambda.Start` function call
-func Handler(req Request) (Response, error) {
+func newRouter() *router {
+	r := router{
+		handlers: make(map[string]Handler),
+	}
+	return &r
+}
+
+func (r *router) addHandler(path string, handler Handler) {
+	if path == "" {
+		path = "/"
+	}
+
+	if path[0] != '/' {
+		path = "/" + path
+	}
+
+	if path[len(path)-1] == '/' {
+		path = path[:len(path)-1]
+	}
+
+	r.handlers[path] = handler
+}
+
+func (r *router) route(req Request) (Response, error) {
 	badRequest := Response{StatusCode: 400}
 
-	path, ok := req.PathParameters["proxy"]
-	if !ok {
-		return badRequest, nil
+	path := req.Path
+	if path == "" {
+		path = "/"
+	}
+	if path[0] != '/' {
+		path = "/" + path
 	}
 
-	pathSplited := strings.SplitN(path, "/", 2)
-	if len(pathSplited) == 0 {
-		return badRequest, nil
-	}
-	subPath := ""
-	if len(pathSplited) > 1 {
-		subPath = pathSplited[1]
-	}
-	req.PathParameters["proxy"] = subPath
+	for p, h := range r.handlers {
+		if !strings.HasPrefix(path, p) {
+			continue
+		}
 
-	resource := pathSplited[0]
-	switch resource {
-	case "links":
-		return links.Handler(req)
-	case "auth":
-		return auth.Handler(req)
-	default:
-		return badRequest, nil
+		// NOTE: request path should not match the case
+		//       that handler path is "/{req.path}xxxx/yyyy"
+		if path[len(path)-1] != '/' {
+			path = path + "/"
+		}
+		if strings.HasPrefix(path, p+"/") {
+			// NOTE: handler gets only subpath
+			subpath := strings.TrimPrefix(path, p)
+			subpath = strings.TrimSuffix(subpath, "/")
+			req.Path = subpath
+
+			return h(req)
+		}
 	}
+
+	return badRequest, nil
 }
 
 func main() {
-	lambda.Start(Handler)
+	r := newRouter()
+
+	r.addHandler("/links", links.Handler)
+	r.addHandler("/auth", auth.Handler)
+
+	lambda.Start(r.route)
 }

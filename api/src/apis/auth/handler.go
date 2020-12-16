@@ -28,12 +28,12 @@ func init() {
 
 // Handler returns links API response
 func Handler(req Request) (Response, error) {
-	path := req.PathParameters["proxy"]
+	path := req.Path
 
 	switch path {
-	case "signin":
+	case "/signin":
 		return signin()
-	case "exchange":
+	case "/exchange":
 		return exchange(req)
 	default:
 		return Response{StatusCode: 400}, nil
