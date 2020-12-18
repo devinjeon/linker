@@ -31,6 +31,11 @@ func Handler(req Request) (Response, error) {
 	}
 }
 
+type newLink struct {
+	URL string `json:"url"`
+	TTL int    `json:"ttl"`
+}
+
 func redirect(req Request) (Response, error) {
 	id := strings.TrimPrefix(req.Path, "/")
 
@@ -58,13 +63,12 @@ func upsert(req Request) (Response, error) {
 	id := strings.TrimPrefix(req.Path, "/")
 	body := req.Body
 
-	var data map[string]interface{}
+	var data newLink
 	if err := json.Unmarshal([]byte(body), &data); err != nil {
 		return Response{StatusCode: 400}, err
 	}
-	url := data["url"].(string)
 
-	err := putURL(id, url)
+	err := putURL(id, data.URL, data.TTL)
 	switch err {
 	case db.ErrDBOperation:
 		return Response{StatusCode: 500}, err

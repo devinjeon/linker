@@ -101,15 +101,15 @@ resource "aws_iam_policy" "dynamodb" {
 resource "aws_dynamodb_table" "dynamodb" {
   name         = local.name
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "ID"
+  hash_key     = "id"
 
   attribute {
-    name = "ID"
+    name = "id"
     type = "S"
   }
 
   ttl {
-    attribute_name = "time_to_exist"
+    attribute_name = "ttl"
     enabled        = true
   }
 }
