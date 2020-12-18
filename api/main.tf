@@ -14,7 +14,8 @@ resource "aws_lambda_function" "lambda" {
 
   environment {
     variables = {
-      DYNAMODB_LINKS_TABLE_NAME = aws_dynamodb_table.dynamodb.name
+      DYNAMODB_LINK_TABLE_NAME = aws_dynamodb_table.dynamodb_link.name
+      DYNAMODB_SESSION_TABLE_NAME = aws_dynamodb_table.dynamodb_session.name
       OAUTH_CLIENT_ID = var.OAUTH_CLIENT_ID
       OAUTH_CLIENT_SECRET = var.OAUTH_CLIENT_SECRET
       OAUTH_REDIRECT_URI = "https://${local.api_domain}/auth/exchange"
@@ -23,7 +24,8 @@ resource "aws_lambda_function" "lambda" {
 
   depends_on = [
     aws_iam_role_policy_attachment.logging,
-    aws_iam_role_policy_attachment.dynamodb,
+    aws_iam_role_policy_attachment.dynamodb_link,
+    aws_iam_role_policy_attachment.dynamodb_session,
   ]
 }
 
@@ -83,23 +85,28 @@ resource "aws_iam_role_policy_attachment" "logging" {
 }
 
 
-data "aws_iam_policy_document" "dynamodb" {
+data "aws_iam_policy_document" "dynamodb_link" {
   statement {
     actions   = ["dynamodb:*"]
-    resources = [aws_dynamodb_table.dynamodb.arn]
+    resources = [aws_dynamodb_table.dynamodb_link.arn]
   }
 }
 
-resource "aws_iam_policy" "dynamodb" {
-  name        = "lambda_${local.name}_dynamodb"
+resource "aws_iam_policy" "dynamodb_link" {
+  name        = "lambda_${local.name}_dynamodb_link"
   path        = "/"
   description = "IAM policy to allow lambda to access to Dynamo DB"
 
-  policy = data.aws_iam_policy_document.dynamodb.json
+  policy = data.aws_iam_policy_document.dynamodb_link.json
 }
 
-resource "aws_dynamodb_table" "dynamodb" {
-  name         = local.name
+resource "aws_iam_role_policy_attachment" "dynamodb_link" {
+  role       = aws_iam_role.iam_role.name
+  policy_arn = aws_iam_policy.dynamodb_link.arn
+}
+
+resource "aws_dynamodb_table" "dynamodb_link" {
+  name         = "${local.name}_link"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "id"
 
@@ -114,10 +121,43 @@ resource "aws_dynamodb_table" "dynamodb" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "dynamodb" {
-  role       = aws_iam_role.iam_role.name
-  policy_arn = aws_iam_policy.dynamodb.arn
+data "aws_iam_policy_document" "dynamodb_session" {
+  statement {
+    actions   = ["dynamodb:*"]
+    resources = [aws_dynamodb_table.dynamodb_session.arn]
+  }
 }
+
+resource "aws_iam_policy" "dynamodb_session" {
+  name        = "lambda_${local.name}_dynamodb_session"
+  path        = "/"
+  description = "IAM policy to allow lambda to access to Dynamo DB"
+
+  policy = data.aws_iam_policy_document.dynamodb_session.json
+}
+
+resource "aws_iam_role_policy_attachment" "dynamodb_session" {
+  role       = aws_iam_role.iam_role.name
+  policy_arn = aws_iam_policy.dynamodb_session.arn
+}
+
+
+resource "aws_dynamodb_table" "dynamodb_session" {
+  name         = "${local.name}_session"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "session_key"
+
+  attribute {
+    name = "session_key"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+}
+
 
 # === API GATEWAY ===
 resource "aws_api_gateway_rest_api" "api" {

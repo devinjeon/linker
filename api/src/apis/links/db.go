@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-var tableName = os.Getenv("DYNAMODB_LINKS_TABLE_NAME")
+var tableName = os.Getenv("DYNAMODB_LINK_TABLE_NAME")
 var c = db.NewDB(tableName)
 
 // Link struct is a model for items from DynamoDB table
