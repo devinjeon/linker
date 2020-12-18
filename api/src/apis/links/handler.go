@@ -76,7 +76,7 @@ func upsert(req Request) (Response, error) {
 		return Response{StatusCode: 500}, err
 	}
 
-	return Response{StatusCode: 200}, nil
+	return Response{StatusCode: 204}, nil
 }
 
 func delete(req Request) (Response, error) {
@@ -92,5 +92,5 @@ func delete(req Request) (Response, error) {
 		return Response{StatusCode: 500}, err
 	}
 
-	return Response{StatusCode: 200}, nil
+	return Response{StatusCode: 204}, nil
 }
