@@ -59,6 +59,10 @@ func redirect(req request) (response, error) {
 }
 
 func upsert(req request) (response, error) {
+	if req.Session == nil {
+		return response{StatusCode: 401}, nil
+	}
+
 	id := strings.TrimPrefix(req.Path, "/")
 	body := req.Body
 
@@ -67,7 +71,16 @@ func upsert(req request) (response, error) {
 		return response{StatusCode: 400}, err
 	}
 
-	err := putURL(id, data.URL, data.TTL)
+	user, _ := req.Session.UserEmail()
+	isOwner, err := verifyLinkOwner(id, user)
+	if err != nil && err != db.ErrNotFoundItem {
+		return response{StatusCode: 500}, err
+	}
+	if err == nil && !isOwner {
+		return response{StatusCode: 401}, nil
+	}
+
+	err = putURL(id, data.URL, user, data.TTL)
 	switch err {
 	case db.ErrDBOperation:
 		return response{StatusCode: 500}, err
@@ -80,8 +93,20 @@ func upsert(req request) (response, error) {
 
 func delete(req request) (response, error) {
 	id := strings.TrimPrefix(req.Path, "/")
+	if req.Session == nil {
+		return response{StatusCode: 401}, nil
+	}
 
-	err := deleteURL(id)
+	user, _ := req.Session.UserEmail()
+	isOwner, err := verifyLinkOwner(id, user)
+	if err != nil {
+		return response{StatusCode: 500}, err
+	}
+	if !isOwner {
+		return response{StatusCode: 401}, nil
+	}
+
+	err = deleteURL(id)
 	switch err {
 	case db.ErrDBOperation:
 		return response{StatusCode: 500}, err
