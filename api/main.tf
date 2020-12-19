@@ -145,10 +145,10 @@ resource "aws_iam_role_policy_attachment" "dynamodb_session" {
 resource "aws_dynamodb_table" "dynamodb_session" {
   name         = "${local.name}_session"
   billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "session_key"
+  hash_key     = "session_id"
 
   attribute {
-    name = "session_key"
+    name = "session_id"
     type = "S"
   }
 
