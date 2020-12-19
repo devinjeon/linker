@@ -19,6 +19,7 @@ resource "aws_lambda_function" "lambda" {
       OAUTH_CLIENT_ID = var.OAUTH_CLIENT_ID
       OAUTH_CLIENT_SECRET = var.OAUTH_CLIENT_SECRET
       OAUTH_REDIRECT_URI = "https://${local.api_domain}/auth/exchange"
+      LINKER_DOMAIN = "linker.${var.ROOT_DOMAIN}"
     }
   }
 

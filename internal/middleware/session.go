@@ -3,7 +3,6 @@ package middleware
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
 	"os"
 
 	db "github.com/devinjeon/linker/internal/utils/dynamodb"
@@ -14,7 +13,6 @@ import (
 )
 
 var sessionTable = os.Getenv("DYNAMODB_SESSION_TABLE_NAME")
-var domain = os.Getenv("LINKER_DOMAIN")
 var clientID = os.Getenv("OAUTH_CLIENT_ID")
 var clientSecret = os.Getenv("OAUTH_CLIENT_SECRET")
 var redirectURI = os.Getenv("OAUTH_REDIRECT_URI")

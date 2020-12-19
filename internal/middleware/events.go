@@ -1,6 +1,13 @@
 package middleware
 
-import "github.com/aws/aws-lambda-go/events"
+import (
+	"fmt"
+
+	"github.com/aws/aws-lambda-go/events"
+)
+
+// WebRootURI is linker webpage root URI
+var WebRootURI = fmt.Sprintf("https://%s", domain)
 
 // Response is alias of events.APIGatewayProxyResponse
 type Response = events.APIGatewayProxyResponse

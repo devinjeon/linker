@@ -26,7 +26,7 @@ func signin(req request) (response, error) {
 		return response{
 			StatusCode: 301,
 			Headers: map[string]string{
-				"Location":      "https://linker.hyojun.me",
+				"Location":      m.WebRootURI,
 				"Cache-control": "no-cache",
 			},
 		}, nil

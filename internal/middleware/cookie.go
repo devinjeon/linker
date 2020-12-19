@@ -2,8 +2,11 @@ package middleware
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
+
+var domain = os.Getenv("LINKER_DOMAIN")
 
 func parseCookie(cookies string) map[string]string {
 	cookiesMap := make(map[string]string)
