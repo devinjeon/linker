@@ -9,7 +9,7 @@ import (
 	u "net/url"
 )
 
-// GitHub is struct for handling GitHub OAuth2 flow
+// GitHub is struct to handle GitHub OAuth2 flow
 type GitHub struct {
 	ClientID     string
 	ClientSecret string
@@ -56,7 +56,7 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 	// Parse reponse body
 	var responseData map[string]interface{}
 	if err := json.Unmarshal(resp.Body, &responseData); err != nil {
-		return nil, ErrMarshalling
+		return nil, err
 	}
 
 	if _, isValid := responseData["access_token"]; !isValid {
@@ -74,14 +74,14 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 	return token, nil
 }
 
-// oauthTokenAPI returns GitHub OAuth2 token API URL
-func (o *GitHub) oauthTokenAPI() string {
+// tokenAPI returns GitHub OAuth2 token API URL
+func (o *GitHub) tokenAPI() string {
 	return fmt.Sprintf("https://api.github.com/applications/%s/token", o.ClientID)
 }
 
 // ValidateToken checks if the accessToken is valid.
-func (o *GitHub) ValidateToken(token *Token) (bool, error) {
-	apiURL := o.oauthTokenAPI()
+func (o *GitHub) ValidateToken(token Token) (bool, error) {
+	apiURL := o.tokenAPI()
 
 	auth := o.ClientID + ":" + o.ClientSecret
 	basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
@@ -109,13 +109,13 @@ func (o *GitHub) ValidateToken(token *Token) (bool, error) {
 }
 
 // RefreshToken does nothing because GitHub OAuth2 doesn't expire access token.
-func (o *GitHub) RefreshToken(token *Token) (bool, error) {
+func (o *GitHub) RefreshToken(token Token) (bool, error) {
 	return false, nil
 }
 
 // RevokeToken revokes access token and authorization
-func (o *GitHub) RevokeToken(token *Token) (bool, error) {
-	apiURL := o.oauthTokenAPI()
+func (o *GitHub) RevokeToken(token Token) (bool, error) {
+	apiURL := o.tokenAPI()
 
 	auth := o.ClientID + ":" + o.ClientSecret
 	basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
@@ -126,7 +126,11 @@ func (o *GitHub) RevokeToken(token *Token) (bool, error) {
 		"access_token": token.AccessToken,
 	}
 
-	dataJSON, _ := json.Marshal(data)
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		return false, err
+	}
+
 	resp, err := http.Delete(apiURL, nil, headers, dataJSON)
 	if err != nil {
 		return false, err
