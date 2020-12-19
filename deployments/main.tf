@@ -31,7 +31,7 @@ resource "aws_lambda_function" "lambda" {
 
 data "archive_file" "lambda_deployment" {
   type        = "zip"
-  source_file = "src/linker"
+  source_file = var.TARGET_BINARY
   output_path = "deploy.zip"
 }
 
@@ -241,13 +241,9 @@ resource "aws_api_gateway_method_settings" "api" {
   }
 }
 
-variable "root_domain" {
-  type = string
-}
-
 locals {
   api_domain_name = "api.linker"
-  api_domain      = "${local.api_domain_name}.${var.root_domain}"
+  api_domain      = "${local.api_domain_name}.${var.ROOT_DOMAIN}"
 }
 
 resource "aws_acm_certificate" "domain" {
@@ -289,7 +285,7 @@ locals {
 
 data "cloudflare_zones" "domain" {
   filter {
-    name = var.root_domain
+    name = var.ROOT_DOMAIN
   }
 }
 
@@ -315,7 +311,7 @@ resource "cloudflare_record" "domain" {
 # 3. Make page rules for forwarding url
 resource "cloudflare_page_rule" "domain" {
   zone_id = local.cloudflare_zone_id
-  target  = "${var.root_domain}/~*"
+  target  = "${var.ROOT_DOMAIN}/~*"
 
   actions {
     forwarding_url {

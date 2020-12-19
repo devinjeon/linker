@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	db "linker/utils/dynamodb"
-	"linker/utils/oauth2"
+	db "github.com/devinjeon/linker/internal/utils/dynamodb"
+	"github.com/devinjeon/linker/internal/utils/oauth2"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"

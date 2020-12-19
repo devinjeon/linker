@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	m "linker/middleware"
-	db "linker/utils/dynamodb"
+	m "github.com/devinjeon/linker/internal/middleware"
+	db "github.com/devinjeon/linker/internal/utils/dynamodb"
 )
 
 type (

@@ -4,3 +4,9 @@ variable "OAUTH_CLIENT_ID" {
 variable "OAUTH_CLIENT_SECRET" {
   type = string
 }
+variable "TARGET_BINARY" {
+  type = string
+}
+variable "ROOT_DOMAIN" {
+  type = string
+}

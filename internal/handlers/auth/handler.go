@@ -1,7 +1,7 @@
 package auth
 
 import (
-	m "linker/middleware"
+	m "github.com/devinjeon/linker/internal/middleware"
 )
 
 type request = m.Request

@@ -1,5 +1,6 @@
-
 ### Go ###
+linker
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

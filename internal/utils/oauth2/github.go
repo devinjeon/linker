@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"linker/utils/http"
 	u "net/url"
+
+	"github.com/devinjeon/linker/internal/utils/http"
 )
 
 // GitHub is struct to handle GitHub OAuth2 flow

@@ -3,7 +3,7 @@ package links
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	db "linker/utils/dynamodb"
+	db "github.com/devinjeon/linker/internal/utils/dynamodb"
 	"os"
 )
 
