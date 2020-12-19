@@ -2,9 +2,8 @@ package oauth2
 
 // Token is struct having fields, accessToken and refreshToken
 type Token struct {
-	AccessToken  string
-	RefreshToken string
-	TokenType    string
+	AccessToken  string `dynamodbav:"access_token"`
+	RefreshToken string `dynamodbav:"refresh_token"`
 }
 
 type oauth2 interface {

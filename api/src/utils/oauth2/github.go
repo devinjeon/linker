@@ -69,8 +69,7 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 
 	token = &Token{
 		AccessToken:  responseData["access_token"].(string),
-		RefreshToken: "",
-		TokenType:    responseData["token_type"].(string),
+		RefreshToken: "null",
 	}
 	return token, nil
 }
