@@ -1,7 +1,6 @@
 package dynamodb
 
 import (
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -9,17 +8,11 @@ import (
 
 func (c *DB) marshalItem(item interface{}) (map[string]*dynamodb.AttributeValue, error) {
 	marshaled, err := dynamodbattribute.MarshalMap(item)
-	if err != nil {
-		fmt.Printf("Failed to marshal Link item, %v", err)
-	}
 	return marshaled, err
 }
 
 func (c *DB) unmarshalItem(marshaledItem map[string]*dynamodb.AttributeValue, unmarshaled interface{}) error {
 	err := dynamodbattribute.UnmarshalMap(marshaledItem, &unmarshaled)
-	if err != nil {
-		fmt.Printf("Failed to unmarshal Record, %v", err)
-	}
 	return err
 }
 
@@ -31,18 +24,15 @@ func (c *DB) GetItem(key map[string]*dynamodb.AttributeValue, item interface{}) 
 	})
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return ErrDBOperation
 	}
 
 	if result.Item == nil {
-		fmt.Printf("Could not find %v", key)
 		return ErrNotFoundItem
 	}
 
 	err = c.unmarshalItem(result.Item, item)
 	if err != nil {
-		fmt.Printf("Failed to unmarshal Record, %v", err)
 		return ErrUnmarshalling
 	}
 
@@ -62,7 +52,6 @@ func (c *DB) PutItem(item interface{}) error {
 	})
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return ErrDBOperation
 	}
 
@@ -82,7 +71,6 @@ func (c *DB) DeleteItem(key map[string]*dynamodb.AttributeValue) error {
 	})
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return ErrDBOperation
 	}
 
