@@ -12,4 +12,5 @@ type oauth2 interface {
 	ValidateToken(token *Token) (bool, error)
 	RefreshToken(token *Token) (bool, error)
 	RevokeToken(token *Token) (bool, error)
+	UserEmail(token *Token) (string, error)
 }

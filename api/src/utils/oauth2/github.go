@@ -143,3 +143,42 @@ func (o *GitHub) RevokeToken(token Token) (bool, error) {
 
 	return false, ErrOAuthServer
 }
+
+// UserEmail returns user email by call user API with token
+func (o *GitHub) UserEmail(token Token) (string, error) {
+	apiURL := "https://api.github.com/user"
+
+	headers := map[string]string{
+		"Authorization": fmt.Sprintf("bearer %s", token.AccessToken),
+	}
+
+	resp, err := http.Get(apiURL, nil, headers, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode == 401 {
+		return "", ErrUnauthorized
+	}
+	if resp.StatusCode != 200 {
+		return "", ErrOAuthServer
+	}
+
+	// Parse reponse body
+	var responseData map[string]interface{}
+	if err := json.Unmarshal(resp.Body, &responseData); err != nil {
+		return "", err
+	}
+
+	email, isValid := responseData["email"]
+	if !isValid {
+		errorMessage, ok := responseData["message"]
+		if !ok {
+			return "", ErrOAuthServer
+		}
+		err = fmt.Errorf("statusCode: %d, %s", resp.StatusCode, errorMessage.(string))
+		return "", err
+	}
+
+	return email.(string), nil
+}
