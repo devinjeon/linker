@@ -28,7 +28,14 @@ func WrapAPIGatewayProxyRequest(req events.APIGatewayProxyRequest) Request {
 	}
 
 	sessionID, _ := cookies["session_id"]
-	sess, _ := getSession(sessionID)
+	sess, err := getSession(sessionID)
+	if err != nil && sess != nil {
+		if isValid, _ := validateSession(*sess); !isValid {
+			RemoveSession(*sess)
+			sess = nil
+		}
+	}
+
 	return Request{
 		APIGatewayProxyRequest: req,
 		Session:                sess,

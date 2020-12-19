@@ -37,8 +37,7 @@ func (s *Session) UserEmail() (string, error) {
 	return OAuth2.UserEmail(s.Token)
 }
 
-// GetSession gets session from id.
-// If the access token of session is expired or invalid, return nil
+// GetSession gets session from id
 func getSession(id string) (*Session, error) {
 	key := map[string]*dynamodb.AttributeValue{
 		"session_id": {
@@ -50,17 +49,12 @@ func getSession(id string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	isValid, err := OAuth2.ValidateToken(sess.Token)
-	if err != nil {
-		return nil, err
-	}
-	if !isValid {
-		RemoveSession(id)
-		OAuth2.RevokeToken(sess.Token)
-		return nil, fmt.Errorf("Invalid Access Token")
-	}
 
 	return sess, nil
+}
+
+func validateSession(session Session) (bool, error) {
+	return OAuth2.ValidateToken(session.Token)
 }
 
 // NewSession creates a new session
@@ -95,16 +89,16 @@ func generateSessionID() (string, error) {
 	return sessID, err
 }
 
-// RemoveSession removes session from DB
-func RemoveSession(id string) error {
+// RemoveSession removes session from DB and revokes Token
+func RemoveSession(session Session) error {
 	key := map[string]*dynamodb.AttributeValue{
 		"session_id": {
-			S: aws.String(id),
+			S: aws.String(session.ID),
 		},
 	}
 
+	OAuth2.RevokeToken(session.Token)
 	err := c.DeleteItem(key)
-
 	if err != nil {
 		return db.ErrDBOperation
 	}
