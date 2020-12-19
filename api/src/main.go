@@ -1,9 +1,11 @@
 package main
 
 import (
+	"strings"
+
 	"linker/apis/auth"
 	"linker/apis/links"
-	"strings"
+	m "linker/middleware"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -13,23 +15,21 @@ import (
 // so it should use Request and Response types from events.APIGatewayProxy*.
 
 type (
-	// Response is of type APIGatewayProxyResponse
-	Response = events.APIGatewayProxyResponse
-	// Request is of type APIGatewayProxyRequest
-	Request = events.APIGatewayProxyRequest
+	response = m.Response
+	request  = m.Request
 	// Handler is type of handler function
-	Handler func(Request) (Response, error)
+	Handler func(request) (response, error)
 )
 
 type router struct {
 	handlers map[string]Handler
 }
 
-func newRouter() *router {
+func newRouter() router {
 	r := router{
 		handlers: make(map[string]Handler),
 	}
-	return &r
+	return r
 }
 
 func (r *router) addHandler(path string, handler Handler) {
@@ -48,9 +48,10 @@ func (r *router) addHandler(path string, handler Handler) {
 	r.handlers[path] = handler
 }
 
-func (r *router) route(req Request) (Response, error) {
-	badRequest := Response{StatusCode: 400}
+func (r *router) route(orgReq events.APIGatewayProxyRequest) (response, error) {
+	req := m.WrapAPIGatewayProxyRequest(orgReq)
 
+	badRequest := response{StatusCode: 400}
 	path := req.Path
 	if path == "" {
 		path = "/"

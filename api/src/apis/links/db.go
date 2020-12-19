@@ -1,7 +1,6 @@
 package links
 
 import (
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	db "linker/utils/dynamodb"
@@ -67,7 +66,6 @@ func deleteURL(id string) error {
 	err := c.DeleteItem(key)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return db.ErrDBOperation
 	}
 

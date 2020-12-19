@@ -1,68 +1,67 @@
 package auth
 
 import (
-	"github.com/aws/aws-lambda-go/events"
-	"linker/utils/oauth2"
-	"os"
+	m "linker/middleware"
 )
 
-var o oauth2.GitHub
-
-// Response is of type APIGatewayProxyResponse
-type Response = events.APIGatewayProxyResponse
-
-// Request is of type APIGatewayProxyRequest
-type Request = events.APIGatewayProxyRequest
-
-func init() {
-	clientID := os.Getenv("OAUTH_CLIENT_ID")
-	clientSecret := os.Getenv("OAUTH_CLIENT_SECRET")
-	redirectURI := os.Getenv("OAUTH_REDIRECT_URI")
-
-	o = oauth2.GitHub{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		RedirectURI:  redirectURI,
-	}
-}
+type request = m.Request
+type response = m.Response
 
 // Handler returns links API response
-func Handler(req Request) (Response, error) {
+func Handler(req request) (response, error) {
 	path := req.Path
 
 	switch path {
 	case "/signin":
-		return signin()
+		return signin(req)
 	case "/exchange":
 		return exchange(req)
 	default:
-		return Response{StatusCode: 400}, nil
+		return response{StatusCode: 400}, nil
 	}
 }
 
-func signin() (Response, error) {
-	resp := Response{
+func signin(req request) (response, error) {
+	if req.Session != nil {
+		return response{
+			StatusCode: 301,
+			Headers: map[string]string{
+				"Location":      "https://linker.hyojun.me",
+				"Cache-control": "no-cache",
+			},
+		}, nil
+	}
+
+	resp := response{
 		StatusCode: 301,
 		Headers: map[string]string{
-			"Location": o.GetAuthorizeURI(),
+			"Location":      m.OAuth2.GetAuthorizeURI(),
+			"Cache-control": "no-cache",
 		},
 	}
 
 	return resp, nil
 }
 
-func exchange(req Request) (Response, error) {
+func exchange(req request) (response, error) {
 	code, ok := req.QueryStringParameters["code"]
 	if !ok {
-		return Response{StatusCode: 400}, nil
+		return response{StatusCode: 400}, nil
 	}
-	token, err := o.ExchangeToken(code)
+	token, err := m.OAuth2.ExchangeToken(code)
 	if err != nil {
-		return Response{StatusCode: 500}, nil
+		return response{StatusCode: 500}, err
 	}
 
-	return Response{
+	sess, err := m.NewSession(token)
+	if err != nil {
+		return response{StatusCode: 500}, err
+	}
+	resp := response{
 		Body:       token.AccessToken,
 		StatusCode: 200,
-	}, nil
+	}
+	m.SetCookie("session_id", sess.ID, &resp)
+
+	return resp, nil
 }
