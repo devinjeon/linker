@@ -77,8 +77,11 @@ func exchange(req request) (response, error) {
 		return response{StatusCode: 500}, err
 	}
 	resp := response{
-		Body:       token.AccessToken,
-		StatusCode: 200,
+		StatusCode: 301,
+		Headers: map[string]string{
+			"Location":      m.WebRootURI,
+			"Cache-control": "no-cache",
+		},
 	}
 	m.SetCookie("session_id", sess.ID, &resp)
 
