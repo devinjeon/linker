@@ -14,6 +14,8 @@ func Handler(req request) (response, error) {
 	switch path {
 	case "/signin":
 		return signin(req)
+	case "/signout":
+		return signout(req)
 	case "/exchange":
 		return exchange(req)
 	default:
@@ -39,6 +41,23 @@ func signin(req request) (response, error) {
 			"Cache-control": "no-cache",
 		},
 	}
+
+	return resp, nil
+}
+
+func signout(req request) (response, error) {
+	if req.Session != nil {
+		m.RemoveSession(*req.Session)
+	}
+
+	resp := response{
+		StatusCode: 301,
+		Headers: map[string]string{
+			"Location":      m.WebRootURI,
+			"Cache-control": "no-cache",
+		},
+	}
+	m.ClearCookie(req, &resp)
 
 	return resp, nil
 }
