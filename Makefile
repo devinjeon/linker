@@ -12,3 +12,10 @@ tf-plan: deployments
 tf-apply: deployments/$(tfplan)
 	cd deployments && terraform apply "$(tfplan)" \
 		&& rm -f "$(tfplan)"
+
+web-start: web
+	cd web && npm start
+web-build: web
+	cd web && npm run build
+web-test: web
+	cd web && npm test
