@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"time"
 
 	"github.com/devinjeon/linker/internal/handlers/auth"
 	"github.com/devinjeon/linker/internal/handlers/links"
@@ -10,13 +12,24 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/awslabs/aws-lambda-go-api-proxy/gin"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
+var linkerDomain = os.Getenv("LINKER_DOMAIN")
 var ginLambda *ginadapter.GinLambda
 
 func init() {
 	r := gin.Default()
+
+	// CORS
+	config := cors.DefaultConfig()
+	config.AllowCredentials = true
+	config.AllowOrigins = []string{linkerDomain}
+	config.MaxAge = time.Hour * 24 * 30
+	r.Use(cors.New(config))
+
+	// Route
 	linksGroup := r.Group("/links")
 	{
 		linksGroup.GET("/:id", links.Redirect)
