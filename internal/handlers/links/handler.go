@@ -2,119 +2,121 @@ package links
 
 import (
 	"encoding/json"
-	"strings"
+	"fmt"
+	"io/ioutil"
 
 	m "github.com/devinjeon/linker/internal/middleware"
 	db "github.com/devinjeon/linker/internal/utils/dynamodb"
-)
 
-type (
-	response = m.Response
-	request  = m.Request
+	"github.com/gin-gonic/gin"
 )
-
-// Handler returns links API response
-func Handler(req request) (response, error) {
-	method := req.HTTPMethod
-	switch method {
-	case "GET":
-		return redirect(req)
-	case "POST":
-		return upsert(req)
-	case "DELETE":
-		return delete(req)
-	case "PUT":
-		return upsert(req)
-	default:
-		return response{StatusCode: 405}, nil
-	}
-}
 
 type newLink struct {
 	URL string `json:"url"`
 	TTL int    `json:"ttl"`
 }
 
-func redirect(req request) (response, error) {
-	id := strings.TrimPrefix(req.Path, "/")
+// Redirect is a handler returning 301 redirection to URL named by ID.
+func Redirect(c *gin.Context) {
+	id := c.Param("id")
 
 	url, err := getURL(id)
 	switch err {
 	case db.ErrDBOperation:
-		return response{StatusCode: 500}, err
+		c.Status(500)
 	case db.ErrNotFoundItem:
-		return response{StatusCode: 404}, nil
+		c.Status(404)
 	case db.ErrUnmarshalling:
-		return response{StatusCode: 500}, err
+		c.Status(500)
+	case nil:
+		c.Status(301)
+		c.Header("Location", url)
 	}
-
-	resp := response{
-		StatusCode: 301,
-		Headers: map[string]string{
-			"Location": url,
-		},
-	}
-
-	return resp, nil
 }
 
-func upsert(req request) (response, error) {
-	if req.Session == nil {
-		return response{StatusCode: 401}, nil
-	}
+// Upsert create or overwrites link.
+var Upsert = m.RequireSession(upsert)
 
-	id := strings.TrimPrefix(req.Path, "/")
-	body := req.Body
+func upsert(c *gin.Context) {
+	id := c.Param("id")
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.Status(400)
+	}
 
 	var data newLink
 	if err := json.Unmarshal([]byte(body), &data); err != nil {
-		return response{StatusCode: 400}, err
+		fmt.Println(err.Error())
+		c.Status(400)
+		return
 	}
 
-	user, _ := req.Session.UserEmail()
+	sess, ok := m.GetSession(c)
+	if !ok {
+		c.Status(401)
+		return
+	}
+
+	user, _ := sess.UserEmail()
 	isOwner, err := verifyLinkOwner(id, user)
 	if err != nil && err != db.ErrNotFoundItem {
-		return response{StatusCode: 500}, err
+		fmt.Println(err.Error())
+		c.Status(500)
+		return
 	}
 	if err == nil && !isOwner {
-		return response{StatusCode: 401}, nil
+		c.Status(401)
+		return
 	}
 
 	err = putURL(id, data.URL, user, data.TTL)
 	switch err {
 	case db.ErrDBOperation:
-		return response{StatusCode: 500}, err
+		fmt.Println(err.Error())
+		c.Status(500)
 	case db.ErrMarshalling:
-		return response{StatusCode: 500}, err
+		fmt.Println(err.Error())
+		c.Status(500)
+	case nil:
+		c.Status(204)
 	}
-
-	return response{StatusCode: 204}, nil
 }
 
-func delete(req request) (response, error) {
-	id := strings.TrimPrefix(req.Path, "/")
-	if req.Session == nil {
-		return response{StatusCode: 401}, nil
+// Delete removes link.
+var Delete = m.RequireSession(delete)
+
+func delete(c *gin.Context) {
+	id := c.Param("id")
+
+	sess, ok := m.GetSession(c)
+	if !ok {
+		c.Status(401)
+		return
 	}
 
-	user, _ := req.Session.UserEmail()
+	user, _ := sess.UserEmail()
 	isOwner, err := verifyLinkOwner(id, user)
 	if err != nil {
-		return response{StatusCode: 500}, err
+		fmt.Println(err.Error())
+		c.Status(500)
+		return
 	}
 	if !isOwner {
-		return response{StatusCode: 401}, nil
+		c.Status(401)
+		return
 	}
 
 	err = deleteURL(id)
 	switch err {
 	case db.ErrDBOperation:
-		return response{StatusCode: 500}, err
+		fmt.Println(err.Error())
+		c.Status(500)
 	case db.ErrNotFoundItem:
-		return response{StatusCode: 404}, nil
+		c.Status(404)
 	case db.ErrUnmarshalling:
-		return response{StatusCode: 500}, err
+		fmt.Println(err.Error())
+		c.Status(500)
+	case nil:
+		c.Status(204)
 	}
-
-	return response{StatusCode: 204}, nil
 }

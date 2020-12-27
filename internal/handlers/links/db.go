@@ -10,14 +10,14 @@ import (
 var tableName = os.Getenv("DYNAMODB_LINK_TABLE_NAME")
 var c = db.NewDB(tableName)
 
-// Link struct is a model for items from DynamoDB table
+// Link struct is a model for items from DynamoDB table.
 type Link struct {
 	ID    string `dynamodbav:"id"`
 	URL   string `dynamodbav:"url"`
 	Owner string `dynamodbav:"owner"`
 }
 
-// LinkWithTTL struct is a model for items having ttl from DynamoDB table
+// LinkWithTTL struct is a model for items having TTL from DynamoDB table.
 type LinkWithTTL struct {
 	ID    string `dynamodbav:"id"`
 	URL   string `dynamodbav:"url"`
@@ -25,7 +25,7 @@ type LinkWithTTL struct {
 	TTL   int    `dynamodbav:"ttl"`
 }
 
-// GetURL finds and returns URL from id in DynamoDB
+// GetURL finds and returns URL from ID in DynamoDB.
 func getURL(id string) (string, error) {
 	key := map[string]*dynamodb.AttributeValue{
 		"id": {
@@ -37,11 +37,11 @@ func getURL(id string) (string, error) {
 	return link.URL, err
 }
 
-// PutURL create a new item or replace item if the id already exists.
-// if ttl is 0, it means not set ttl.
-func putURL(id string, url string, user string, ttl int) error {
+// PutURL create a new item or replace item if the ID already exists.
+// if TTL is 0, it means not set TTL.
+func putURL(id string, url string, user string, TTL int) error {
 	var newLink interface{}
-	if ttl == 0 {
+	if TTL == 0 {
 		newLink = Link{
 			ID:    id,
 			URL:   url,
@@ -52,7 +52,7 @@ func putURL(id string, url string, user string, ttl int) error {
 			ID:    id,
 			URL:   url,
 			Owner: user,
-			TTL:   ttl,
+			TTL:   TTL,
 		}
 	}
 	err := c.PutItem(newLink)
@@ -73,7 +73,7 @@ func verifyLinkOwner(id string, user string) (bool, error) {
 	return user == link.Owner, nil
 }
 
-// DeleteURL delete a item from id
+// DeleteURL deletes a item by ID.
 func deleteURL(id string) error {
 	key := map[string]*dynamodb.AttributeValue{
 		"id": {

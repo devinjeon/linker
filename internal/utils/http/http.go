@@ -79,22 +79,22 @@ func request(method string, url string, queryParams map[string]string, headers m
 	return
 }
 
-// Get requests HTTP call with GET method
+// Get requests HTTP call with GET method.
 func Get(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
 	return request(HTTPGet, url, queryParams, headers, body)
 }
 
-// Post requests HTTP call with POST method
+// Post requests HTTP call with POST method.
 func Post(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
 	return request(HTTPPost, url, queryParams, headers, body)
 }
 
-// Delete requests HTTP call with DELETE method
+// Delete requests HTTP call with DELETE method.
 func Delete(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
 	return request(HTTPDelete, url, queryParams, headers, body)
 }
 
-// Put requests HTTP call with PUT method
+// Put requests HTTP call with PUT method.
 func Put(url string, queryParams map[string]string, headers map[string]string, body []byte) (response *Response, err error) {
 	return request(HTTPPut, url, queryParams, headers, body)
 }

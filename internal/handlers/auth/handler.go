@@ -1,89 +1,58 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
+	"os"
+
 	m "github.com/devinjeon/linker/internal/middleware"
+	"github.com/gin-gonic/gin"
 )
 
-type request = m.Request
-type response = m.Response
+var linkerDomain = os.Getenv("LINKER_DOMAIN")
+var linkerURL = fmt.Sprintf("https://%s", linkerDomain)
 
-// Handler returns links API response
-func Handler(req request) (response, error) {
-	path := req.Path
-
-	switch path {
-	case "/signin":
-		return signin(req)
-	case "/signout":
-		return signout(req)
-	case "/exchange":
-		return exchange(req)
-	default:
-		return response{StatusCode: 400}, nil
+// SignIn is a handler to sign in.
+func SignIn(c *gin.Context) {
+	c.Status(301)
+	c.Header("Cache-control", "no-cache")
+	_, err := c.Cookie("session_id")
+	if err != http.ErrNoCookie {
+		c.Header("Location", linkerURL)
+		return
 	}
+	c.Header("Location", m.OAuth2.GetAuthorizeURI())
+	return
 }
 
-func signin(req request) (response, error) {
-	if req.Session != nil {
-		return response{
-			StatusCode: 301,
-			Headers: map[string]string{
-				"Location":      m.WebRootURI,
-				"Cache-control": "no-cache",
-			},
-		}, nil
-	}
-
-	resp := response{
-		StatusCode: 301,
-		Headers: map[string]string{
-			"Location":      m.OAuth2.GetAuthorizeURI(),
-			"Cache-control": "no-cache",
-		},
-	}
-
-	return resp, nil
+// SignOut is a handler to sign out.
+func SignOut(c *gin.Context) {
+	m.RemoveSession(c)
+	c.Header("Cache-control", "no-cache")
+	c.Status(204)
 }
 
-func signout(req request) (response, error) {
-	if req.Session != nil {
-		m.RemoveSession(*req.Session)
+// Exchange is a handler to exchange token between OAuth2 service and Linker.
+func Exchange(c *gin.Context) {
+	code := c.Query("code")
+	if code == "" {
+		c.Status(400)
+		return
 	}
 
-	resp := response{
-		StatusCode: 301,
-		Headers: map[string]string{
-			"Location":      m.WebRootURI,
-			"Cache-control": "no-cache",
-		},
-	}
-	m.ClearCookie(req, &resp)
-
-	return resp, nil
-}
-
-func exchange(req request) (response, error) {
-	code, ok := req.QueryStringParameters["code"]
-	if !ok {
-		return response{StatusCode: 400}, nil
-	}
 	token, err := m.OAuth2.ExchangeToken(code)
 	if err != nil {
-		return response{StatusCode: 500}, err
+		c.Status(500)
+		return
 	}
 
-	sess, err := m.NewSession(token)
+	err = m.NewSession(token, c)
 	if err != nil {
-		return response{StatusCode: 500}, err
+		c.Status(500)
+		return
 	}
-	resp := response{
-		StatusCode: 301,
-		Headers: map[string]string{
-			"Location":      m.WebRootURI,
-			"Cache-control": "no-cache",
-		},
-	}
-	m.SetCookie("session_id", sess.ID, &resp)
 
-	return resp, nil
+	c.Status(301)
+	c.Header("Location", linkerURL)
+	c.Header("Cache-control", "no-cache")
 }

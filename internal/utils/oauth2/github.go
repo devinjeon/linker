@@ -10,14 +10,14 @@ import (
 	"github.com/devinjeon/linker/internal/utils/http"
 )
 
-// GitHub is struct to handle GitHub OAuth2 flow
+// GitHub is struct to handle GitHub OAuth2 flow.
 type GitHub struct {
 	ClientID     string
 	ClientSecret string
 	RedirectURI  string
 }
 
-// GetAuthorizeURI returns URI to authorize
+// GetAuthorizeURI returns URI to authorize.
 func (o *GitHub) GetAuthorizeURI() string {
 	baseURL := "https://github.com/login/oauth/authorize"
 	authURI, _ := u.Parse(baseURL)
@@ -31,7 +31,7 @@ func (o *GitHub) GetAuthorizeURI() string {
 	return authURI.String()
 }
 
-// ExchangeToken acquires access token
+// ExchangeToken acquires access token.
 func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 	apiURL := "https://github.com/login/oauth/access_token"
 
@@ -54,7 +54,7 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 		return nil, ErrOAuthServer
 	}
 
-	// Parse reponse body
+	// Parse reponse body.
 	var responseData map[string]interface{}
 	if err := json.Unmarshal(resp.Body, &responseData); err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (o *GitHub) ExchangeToken(code string) (token *Token, err error) {
 	return token, nil
 }
 
-// tokenAPI returns GitHub OAuth2 token API URL
+// tokenAPI returns GitHub OAuth2 token API URL.
 func (o *GitHub) tokenAPI() string {
 	return fmt.Sprintf("https://api.github.com/applications/%s/token", o.ClientID)
 }
@@ -114,7 +114,7 @@ func (o *GitHub) RefreshToken(token Token) (bool, error) {
 	return false, nil
 }
 
-// RevokeToken revokes access token and authorization
+// RevokeToken revokes access token and authorization.
 func (o *GitHub) RevokeToken(token Token) (bool, error) {
 	apiURL := o.tokenAPI()
 
@@ -145,7 +145,7 @@ func (o *GitHub) RevokeToken(token Token) (bool, error) {
 	return false, ErrOAuthServer
 }
 
-// UserEmail returns user email by call user API with token
+// UserEmail returns user email by call user API with token.
 func (o *GitHub) UserEmail(token Token) (string, error) {
 	apiURL := "https://api.github.com/user"
 

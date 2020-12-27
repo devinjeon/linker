@@ -16,7 +16,7 @@ func (c *DB) unmarshalItem(marshaledItem map[string]*dynamodb.AttributeValue, un
 	return err
 }
 
-// GetItem finds and returns item from key
+// GetItem finds and returns item by key.
 func (c *DB) GetItem(key map[string]*dynamodb.AttributeValue, item interface{}) error {
 	result, err := c.client.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(c.tableName),
@@ -39,7 +39,7 @@ func (c *DB) GetItem(key map[string]*dynamodb.AttributeValue, item interface{}) 
 	return nil
 }
 
-// PutItem create a new item or replace item with new one
+// PutItem create a new item or replace item with new one.
 func (c *DB) PutItem(item interface{}) error {
 	marshaledItem, err := c.marshalItem(item)
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *DB) PutItem(item interface{}) error {
 	return nil
 }
 
-// DeleteItem delete a item from key
+// DeleteItem delete a item by key.
 func (c *DB) DeleteItem(key map[string]*dynamodb.AttributeValue) error {
 	err := c.GetItem(key, nil)
 	if err != nil {
