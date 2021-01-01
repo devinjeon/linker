@@ -3,13 +3,13 @@ import './App.css';
 import { useCookies } from 'react-cookie';
 import { Component } from 'react';
 import axios from 'axios';
-axios.defaults.baseURL = 'https://api.linker.hyojun.me';
+axios.defaults.baseURL = 'http://localhost:28081';
 
 function App() {
-  const [cookies] = useCookies(["session_id"]);
+  const [cookies] = useCookies(["session"]);
 
   function hasSession() {
-    return cookies.session_id !== undefined;
+    return cookies.session !== undefined;
   }
 
   function createNewLink(data) {
@@ -31,9 +31,9 @@ function App() {
 function SignButton(props) {
   const hasSession = props.hasSession;
   if (!hasSession) {
-    return <a href="https://api.linker.hyojun.me/auth/signin">로그인</a>
+    return <a href={`${axios.defaults.baseURL}/auth/signin`}>로그인</a>
   } else {
-    return <a href="https://api.linker.hyojun.me/auth/signin">로그아웃</a>
+    return <a href={`${axios.defaults.baseURL}/auth/signin`}>로그아웃</a>
   }
 }
 

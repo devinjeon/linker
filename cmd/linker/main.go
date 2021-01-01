@@ -33,6 +33,10 @@ func mustGetEnv(key string) string {
 	panic(fmt.Errorf("The environment vairable not set: %s", key))
 }
 
+// For development
+var isDev = os.Getenv("LINKER_IS_DEV") == "true"
+var devPort = os.Getenv("LINKER_DEV_PORT")
+
 // App main URL
 var linkerURL = mustGetEnv("LINKER_URL")
 
@@ -49,10 +53,11 @@ var oauth2ClientSecret = mustGetEnv("OAUTH2_CLIENT_SECRET")
 // DynamoDB Table name to store links
 var tableName = mustGetEnv("DYNAMODB_TABLE_NAME")
 
+var r *gin.Engine
 var ginLambda *ginadapter.GinLambda
 
 func init() {
-	r := gin.Default()
+	r = gin.Default()
 
 	parsedURL, err := url.Parse(linkerURL)
 	if err != nil {
@@ -65,7 +70,7 @@ func init() {
 		Path:     "/",
 		Domain:   parsedURL.Hostname(),
 		MaxAge:   3600 * 24 * 90,
-		Secure:   true,
+		Secure:   !isDev,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 	}
@@ -119,5 +124,12 @@ func handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 }
 
 func main() {
-	lambda.Start(handler)
+	if isDev {
+		if devPort == "" {
+			devPort = "8081"
+		}
+		r.Run(fmt.Sprintf(":%s", devPort))
+	} else {
+		lambda.Start(handler)
+	}
 }

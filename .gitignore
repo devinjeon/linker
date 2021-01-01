@@ -1,5 +1,6 @@
 ### Go ###
 /linker
+/test/env
 
 # Binaries for programs and plugins
 *.exe
