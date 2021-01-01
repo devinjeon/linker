@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	m "github.com/devinjeon/linker/internal/middleware"
+	auth "github.com/devinjeon/linker/internal/handlers/auth"
 	db "github.com/devinjeon/linker/internal/utils/dynamodb"
 
 	"github.com/gin-gonic/gin"
@@ -16,11 +16,25 @@ type newLink struct {
 	TTL int    `json:"ttl"`
 }
 
+// Handlers is struct including handler methods.
+type Handlers struct {
+	table *db.Table
+}
+
+// New creates handlers for link resources
+func New(dynamoDBTableName string) Handlers {
+	hanlders := Handlers{
+		table: db.NewTable(dynamoDBTableName),
+	}
+
+	return hanlders
+}
+
 // Redirect is a handler returning 301 redirection to URL named by ID.
-func Redirect(c *gin.Context) {
+func (h *Handlers) Redirect(c *gin.Context) {
 	id := c.Param("id")
 
-	url, err := getURL(id)
+	url, err := h.getURL(id)
 	switch err {
 	case db.ErrDBOperation:
 		c.Status(500)
@@ -29,15 +43,14 @@ func Redirect(c *gin.Context) {
 	case db.ErrUnmarshalling:
 		c.Status(500)
 	case nil:
-		c.Status(301)
-		c.Header("Location", url)
+		c.Redirect(301, url)
 	}
 }
 
 // Upsert create or overwrites link.
-var Upsert = m.RequireSession(upsert)
+func (h *Handlers) Upsert(c *gin.Context) {
+	u := c.MustGet("auth").(auth.Auth)
 
-func upsert(c *gin.Context) {
 	id := c.Param("id")
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
@@ -51,14 +64,7 @@ func upsert(c *gin.Context) {
 		return
 	}
 
-	sess, ok := m.GetSession(c)
-	if !ok {
-		c.Status(401)
-		return
-	}
-
-	user, _ := sess.UserEmail()
-	isOwner, err := verifyLinkOwner(id, user)
+	isOwner, err := h.verifyLinkOwner(id, u.User)
 	if err != nil && err != db.ErrNotFoundItem {
 		fmt.Println(err.Error())
 		c.Status(500)
@@ -69,7 +75,7 @@ func upsert(c *gin.Context) {
 		return
 	}
 
-	err = putURL(id, data.URL, user, data.TTL)
+	err = h.putURL(id, data.URL, u.User, data.TTL)
 	switch err {
 	case db.ErrDBOperation:
 		fmt.Println(err.Error())
@@ -83,19 +89,11 @@ func upsert(c *gin.Context) {
 }
 
 // Delete removes link.
-var Delete = m.RequireSession(delete)
-
-func delete(c *gin.Context) {
+func (h *Handlers) Delete(c *gin.Context) {
+	u := c.MustGet("auth").(auth.Auth)
 	id := c.Param("id")
 
-	sess, ok := m.GetSession(c)
-	if !ok {
-		c.Status(401)
-		return
-	}
-
-	user, _ := sess.UserEmail()
-	isOwner, err := verifyLinkOwner(id, user)
+	isOwner, err := h.verifyLinkOwner(id, u.User)
 	if err != nil {
 		fmt.Println(err.Error())
 		c.Status(500)
@@ -106,7 +104,7 @@ func delete(c *gin.Context) {
 		return
 	}
 
-	err = deleteURL(id)
+	err = h.deleteURL(id)
 	switch err {
 	case db.ErrDBOperation:
 		fmt.Println(err.Error())

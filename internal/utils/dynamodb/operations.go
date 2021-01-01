@@ -6,18 +6,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
-func (c *DB) marshalItem(item interface{}) (map[string]*dynamodb.AttributeValue, error) {
+func (c *Table) marshalItem(item interface{}) (map[string]*dynamodb.AttributeValue, error) {
 	marshaled, err := dynamodbattribute.MarshalMap(item)
 	return marshaled, err
 }
 
-func (c *DB) unmarshalItem(marshaledItem map[string]*dynamodb.AttributeValue, unmarshaled interface{}) error {
+func (c *Table) unmarshalItem(marshaledItem map[string]*dynamodb.AttributeValue, unmarshaled interface{}) error {
 	err := dynamodbattribute.UnmarshalMap(marshaledItem, &unmarshaled)
 	return err
 }
 
 // GetItem finds and returns item by key.
-func (c *DB) GetItem(key map[string]*dynamodb.AttributeValue, item interface{}) error {
+func (c *Table) GetItem(key map[string]*dynamodb.AttributeValue, item interface{}) error {
 	result, err := c.client.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(c.tableName),
 		Key:       key,
@@ -40,7 +40,7 @@ func (c *DB) GetItem(key map[string]*dynamodb.AttributeValue, item interface{}) 
 }
 
 // PutItem create a new item or replace item with new one.
-func (c *DB) PutItem(item interface{}) error {
+func (c *Table) PutItem(item interface{}) error {
 	marshaledItem, err := c.marshalItem(item)
 	if err != nil {
 		return ErrMarshalling
@@ -59,7 +59,7 @@ func (c *DB) PutItem(item interface{}) error {
 }
 
 // DeleteItem delete a item by key.
-func (c *DB) DeleteItem(key map[string]*dynamodb.AttributeValue) error {
+func (c *Table) DeleteItem(key map[string]*dynamodb.AttributeValue) error {
 	err := c.GetItem(key, nil)
 	if err != nil {
 		return err

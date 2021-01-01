@@ -1,58 +1,214 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/gob"
+	"encoding/json"
+	"errors"
 	"fmt"
-	"net/http"
-	"os"
+	"io/ioutil"
 
-	m "github.com/devinjeon/linker/internal/middleware"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 )
 
-var linkerDomain = os.Getenv("LINKER_DOMAIN")
-var linkerURL = fmt.Sprintf("https://%s", linkerDomain)
+func init() {
+	gob.Register(oauth2.Token{})
+}
+
+// New creates handlers for authentication
+func New(redirectURL string, oauth2 oauth2.Config) Handlers {
+	handlers := Handlers{
+		redirectURL: redirectURL,
+		oauth2:      oauth2,
+	}
+
+	return handlers
+}
+
+// Handlers is struct including handler methods.
+type Handlers struct {
+	redirectURL string
+	oauth2      oauth2.Config
+}
+
+// User is map[string]interface{} type storing user information
+type User map[string]interface{}
+
+// Auth stores user information
+type Auth struct {
+	// User is user ID of OAuth2 service
+	User string
+	// Token is access token
+	Token oauth2.Token
+}
+
+func (h *Handlers) getSession(c *gin.Context) sessions.Session {
+	session := sessions.Default(c)
+	return session
+}
+
+func generateState() (string, error) {
+	length := 32
+	b := make([]byte, length)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	state := base64.URLEncoding.EncodeToString(b)
+	return state, nil
+}
 
 // SignIn is a handler to sign in.
-func SignIn(c *gin.Context) {
-	c.Status(301)
-	c.Header("Cache-control", "no-cache")
-	_, err := c.Cookie("session_id")
-	if err != http.ErrNoCookie {
-		c.Header("Location", linkerURL)
-		return
+func (h *Handlers) SignIn(c *gin.Context) {
+	session := h.getSession(c)
+	state, err := generateState()
+	if err != nil {
+		c.AbortWithError(500, err)
 	}
-	c.Header("Location", m.OAuth2.GetAuthorizeURI())
-	return
+	session.Set("state", state)
+	session.Set("referrer", c.Request.Referer())
+	if err := session.Save(); err != nil {
+		c.AbortWithError(500, err)
+	}
+
+	authorizeURL := h.oauth2.AuthCodeURL(state, oauth2.AccessTypeOnline)
+
+	c.Redirect(302, authorizeURL)
 }
 
 // SignOut is a handler to sign out.
-func SignOut(c *gin.Context) {
-	m.RemoveSession(c)
-	c.Header("Cache-control", "no-cache")
-	c.Status(204)
+func (h *Handlers) SignOut(c *gin.Context) {
+	session := h.getSession(c)
+	session.Clear()
+	if err := session.Save(); err != nil {
+		c.AbortWithError(500, err)
+		return
+	}
+
+	c.Redirect(302, h.redirectURL)
+	return
+}
+
+func (h *Handlers) userInfo(token *oauth2.Token) (User, error) {
+	apiURL := "https://api.github.com/user"
+
+	client := h.oauth2.Client(oauth2.NoContext, token)
+	resp, err := client.Get(apiURL)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	// Parse reponse body
+	var user User
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != 200 {
+		return nil, errors.New(string(body))
+	}
+
+	if err := json.Unmarshal(body, &user); err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 // Exchange is a handler to exchange token between OAuth2 service and Linker.
-func Exchange(c *gin.Context) {
+func (h *Handlers) Exchange(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			c.String(500, "Error: %v", r.(error))
+			return
+		}
+	}()
+
+	// Check code from OAuth2 service
 	code := c.Query("code")
 	if code == "" {
-		c.Status(400)
+		c.AbortWithStatus(400)
 		return
 	}
 
-	token, err := m.OAuth2.ExchangeToken(code)
+	// Check state
+	session := h.getSession(c)
+	if session.Get("state") != c.Query("state") {
+		c.AbortWithStatus(400)
+		return
+	}
+
+	// Exchange token
+	token, err := h.oauth2.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		c.Status(500)
+		c.String(500, "Failed to exchange token: %v", err)
 		return
 	}
 
-	err = m.NewSession(token, c)
+	// Get user info
+	userInfo, err := h.userInfo(token)
 	if err != nil {
-		c.Status(500)
+		c.String(500, "Failed to get user info: %v", err)
 		return
 	}
 
-	c.Status(301)
-	c.Header("Location", linkerURL)
-	c.Header("Cache-control", "no-cache")
+	// Get userID
+	userID, ok := userInfo["id"]
+	if !ok {
+		c.String(500, "Failed to get userID")
+		return
+	}
+
+	// Encode userID
+	user := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%v", userID)))
+
+	// Save user and token to session
+	session.Clear()
+	session.Set("user", user)
+	session.Set("token", token)
+	if err := session.Save(); err != nil {
+		c.String(500, "Failed to save session: %v", err)
+		return
+	}
+
+	// Get redirect URL
+	var redirectURL string
+	referrer, ok := session.Get("referrer").(string)
+	if ok && referrer != "" {
+		redirectURL = referrer
+	} else {
+		redirectURL = h.redirectURL
+	}
+
+	c.Redirect(302, redirectURL)
+}
+
+// RequireAuth is a middleware to check if the current user is authenticated
+func (h *Handlers) RequireAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := h.getSession(c)
+		user, ok := session.Get("user").(string)
+		if !ok {
+			c.AbortWithStatus(401)
+			return
+		}
+		token, ok := session.Get("token").(oauth2.Token)
+		if !ok {
+			c.AbortWithStatus(401)
+			return
+		}
+
+		auth := Auth{
+			User:  user,
+			Token: token,
+		}
+		c.Set("auth", auth)
+	}
 }

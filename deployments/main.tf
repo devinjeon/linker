@@ -14,19 +14,18 @@ resource "aws_lambda_function" "lambda" {
 
   environment {
     variables = {
-      DYNAMODB_LINK_TABLE_NAME = aws_dynamodb_table.dynamodb_link.name
-      DYNAMODB_SESSION_TABLE_NAME = aws_dynamodb_table.dynamodb_session.name
-      OAUTH_CLIENT_ID = var.OAUTH_CLIENT_ID
-      OAUTH_CLIENT_SECRET = var.OAUTH_CLIENT_SECRET
-      OAUTH_REDIRECT_URI = "https://${local.api_domain}/auth/exchange"
-      LINKER_DOMAIN = "linker.${var.ROOT_DOMAIN}"
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.dynamodb_link.name
+      LINKER_URL = "https://linker.${var.ROOT_DOMAIN}"
+      OAUTH2_CLIENT_ID = var.OAUTH2_CLIENT_ID
+      OAUTH2_CLIENT_SECRET = var.OAUTH2_CLIENT_SECRET
+      SESSION_SECRET_KEY = var.SESSION_SECRET_KEY
+      SESSION_ENCRYPTION_KEY = var.SESSION_ENCRYPTION_KEY
     }
   }
 
   depends_on = [
     aws_iam_role_policy_attachment.logging,
     aws_iam_role_policy_attachment.dynamodb_link,
-    aws_iam_role_policy_attachment.dynamodb_session,
   ]
 }
 
@@ -121,44 +120,6 @@ resource "aws_dynamodb_table" "dynamodb_link" {
     enabled        = true
   }
 }
-
-data "aws_iam_policy_document" "dynamodb_session" {
-  statement {
-    actions   = ["dynamodb:*"]
-    resources = [aws_dynamodb_table.dynamodb_session.arn]
-  }
-}
-
-resource "aws_iam_policy" "dynamodb_session" {
-  name        = "lambda_${local.name}_dynamodb_session"
-  path        = "/"
-  description = "IAM policy to allow lambda to access to Dynamo DB"
-
-  policy = data.aws_iam_policy_document.dynamodb_session.json
-}
-
-resource "aws_iam_role_policy_attachment" "dynamodb_session" {
-  role       = aws_iam_role.iam_role.name
-  policy_arn = aws_iam_policy.dynamodb_session.arn
-}
-
-
-resource "aws_dynamodb_table" "dynamodb_session" {
-  name         = "${local.name}_session"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "session_id"
-
-  attribute {
-    name = "session_id"
-    type = "S"
-  }
-
-  ttl {
-    attribute_name = "ttl"
-    enabled        = true
-  }
-}
-
 
 # === API GATEWAY ===
 resource "aws_api_gateway_rest_api" "api" {
