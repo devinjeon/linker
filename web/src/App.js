@@ -6,10 +6,10 @@ import axios from 'axios';
 axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 
 function App() {
-  const [cookies] = useCookies(["session"]);
+  const [cookies] = useCookies(["is_logged_in"]);
 
-  function hasSession() {
-    return cookies.session !== undefined;
+  function isLoggedIn() {
+    return cookies.is_logged_in === "true";
   }
 
   function createNewLink(data) {
@@ -22,18 +22,18 @@ function App() {
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <LinkFrom onCreate={createNewLink} />
-        <SignButton hasSession={hasSession()} />
+        <SignButton isLoggedIn={isLoggedIn()} />
       </header>
     </div>
   );
 }
 
 function SignButton(props) {
-  const hasSession = props.hasSession;
-  if (!hasSession) {
+  const isLoggedIn = props.isLoggedIn;
+  if (!isLoggedIn) {
     return <a href={`${axios.defaults.baseURL}/auth/signin`}>로그인</a>
   } else {
-    return <a href={`${axios.defaults.baseURL}/auth/signin`}>로그아웃</a>
+    return <a href={`${axios.defaults.baseURL}/auth/signout`}>로그아웃</a>
   }
 }
 
