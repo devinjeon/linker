@@ -25,7 +25,7 @@ _setup_dynamodb() {
     -d -p 28000:8000 amazon/dynamodb-local
 }
 
-_init() {
+_setup_dynamodb_table() {
   aws dynamodb create-table \
     --table-name "$DYNAMODB_TABLE_NAME" \
     --attribute-definitions AttributeName=id,AttributeType=S \
@@ -42,7 +42,7 @@ _init() {
 echo "* Provisioning DynamoDB on local ..."
 
 _setup_dynamodb &>/dev/null
-_init &>/dev/null || (_term; exit 1)
+_setup_dynamodb_table &>/dev/null
 
 echo "* Running $BUILD"
 $BUILD
