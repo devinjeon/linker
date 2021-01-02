@@ -3,7 +3,7 @@ import './App.css';
 import { useCookies } from 'react-cookie';
 import { Component } from 'react';
 import axios from 'axios';
-axios.defaults.baseURL = 'http://localhost:28081';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 
 function App() {
   const [cookies] = useCookies(["session"]);
