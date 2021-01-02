@@ -9,11 +9,12 @@ export DYNAMODB_ENDPOINT="http://localhost:28000"
 export IS_DEV=true
 export DEV_PORT=8081
 
-BUILD=$1
-TEST_ENV=$2
-if [[ -z "$BUILD" || -z "$TEST_ENV" ]]; then
+if [[ ! $# -eq 2 ]]; then
   echo "* Usage: $0 <compiled_filepath> <env_file>" && exit 1
 fi
+
+BUILD=$1
+TEST_ENV=$2
 
 . "$TEST_ENV"
 
