@@ -1,25 +1,31 @@
 tfplan=terraform.tfplan
+test_env=$(PWD)/test/env
+compiled=$(PWD)/linker
 
-build: cmd/linker
+build:
 	GOOS=linux go build ./cmd/linker
+
 clean:
 	rm -f linker deployments/deploy.zip \
 	docker rm -f linker-dynamodb
-plan: build tf-plan
-apply: tf-apply clean
-tf-plan: deployments
-	export TF_VAR_TARGET_BINARY="$(PWD)/linker" && \
+
+plan: build
+	export TF_VAR_TARGET_BINARY="$(compiled)" && \
 		cd deployments && terraform plan -out="$(tfplan)"
-tf-apply: deployments/$(tfplan)
+
+apply:
 	cd deployments && terraform apply "$(tfplan)" \
 		&& rm -f "$(tfplan)"
 
-test: build
-	./scripts/test.sh "$(PWD)/linker"
+deploy: apply
 
-web-start: web
+dev: build
+	./scripts/run-local.sh "$(compiled)" "$(test_env)"
+
+
+web-dev:
 	cd web && npm start
-web-build: web
+web-build:
 	cd web && npm run build
-web-test: web
+web-test:
 	cd web && npm test
