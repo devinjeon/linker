@@ -70,7 +70,7 @@ func init() {
 	options := sessions.Options{
 		Path:     "/",
 		Domain:   parsedURL.Hostname(),
-		MaxAge:   3600 * 24 * 90,
+		MaxAge:   3600 * 24 * 365 * 10,
 		Secure:   !isDev,
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,

@@ -8,11 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 )
+
+const loginSessionTime = 3600 * 24 * 90
 
 func init() {
 	gob.Register(oauth2.Token{})
@@ -83,6 +86,7 @@ func (h *Handlers) SignIn(c *gin.Context) {
 
 // SignOut is a handler to sign out.
 func (h *Handlers) SignOut(c *gin.Context) {
+	c.SetCookie("is_logged_in", "false", -1, "/", "", false, false)
 	session := h.getSession(c)
 	session.Clear()
 	if err := session.Save(); err != nil {
@@ -185,6 +189,10 @@ func (h *Handlers) Exchange(c *gin.Context) {
 		return
 	}
 
+	// Set login status
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("is_logged_in", "true", loginSessionTime, "/", "", false, false)
+
 	// Get redirect URL
 	var redirectURL string
 	if referrer != "" {
@@ -200,13 +208,21 @@ func (h *Handlers) Exchange(c *gin.Context) {
 func (h *Handlers) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := h.getSession(c)
+
+		isValid := true
 		user, ok := session.Get("user").(string)
-		if !ok {
-			c.AbortWithStatus(401)
-			return
+		if !ok || user == "" {
+			isValid = false
 		}
 		token, ok := session.Get("token").(oauth2.Token)
 		if !ok {
+			isValid = false
+		}
+
+		if !isValid {
+			session.Clear()
+			session.Save()
+			c.SetCookie("is_logged_in", "false", -1, "/", "", false, false)
 			c.AbortWithStatus(401)
 			return
 		}
