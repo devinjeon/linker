@@ -1,3 +1,4 @@
+# 1. API
 tfplan=terraform.tfplan
 test_env=$(PWD)/test/env
 compiled=$(PWD)/linker
@@ -22,10 +23,12 @@ deploy: apply
 dev: build
 	./scripts/run-local.sh "$(compiled)" "$(test_env)"
 
-
+# 2. Web
 web-dev:
 	cd web && npm start
 web-build:
 	cd web && npm run build
 web-test:
 	cd web && npm test
+web-deploy:
+	cd web && npm run deploy
