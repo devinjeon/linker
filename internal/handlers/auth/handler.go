@@ -189,7 +189,8 @@ func (h *Handlers) Exchange(c *gin.Context) {
 		return
 	}
 
-	// Set login status
+	// Set is_logged_in cookie so that client can check login status.
+	// However, API server believes values only inside 'session' cookie.
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("is_logged_in", "true", loginSessionTime, "/", "", false, false)
 
