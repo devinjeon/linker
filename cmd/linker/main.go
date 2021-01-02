@@ -34,8 +34,9 @@ func mustGetEnv(key string) string {
 }
 
 // For development
-var isDev = os.Getenv("LINKER_IS_DEV") == "true"
-var devPort = os.Getenv("LINKER_DEV_PORT")
+var isDev = os.Getenv("IS_DEV") == "true"
+var devPort = os.Getenv("DEV_PORT")
+var endpoint = os.Getenv("DYNAMODB_ENDPOINT")
 
 // App main URL
 var linkerURL = mustGetEnv("LINKER_URL")
@@ -104,7 +105,7 @@ func init() {
 	}
 
 	// 2. Links Handlers
-	linksHandlers := links.New(tableName)
+	linksHandlers := links.New(tableName, endpoint)
 
 	r.GET("/links/:id", linksHandlers.Redirect)
 

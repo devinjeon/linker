@@ -22,9 +22,9 @@ type Handlers struct {
 }
 
 // New creates handlers for link resources
-func New(dynamoDBTableName string) Handlers {
+func New(dynamoDBTableName string, endpoint string) Handlers {
 	hanlders := Handlers{
-		table: db.NewTable(dynamoDBTableName),
+		table: db.NewTable(dynamoDBTableName, endpoint),
 	}
 
 	return hanlders

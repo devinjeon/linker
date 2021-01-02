@@ -1,6 +1,7 @@
 package dynamodb
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 )
@@ -16,9 +17,17 @@ type Table struct {
 }
 
 // NewTable creates a new client of DynamoDB with the specified table name.
-func NewTable(tableName string) *Table {
+func NewTable(tableName string, endpoint string) *Table {
+	if endpoint == "" {
+		return &Table{
+			tableName: tableName,
+			client:    dynamodb.New(sess),
+		}
+	}
+
+	cfg := aws.NewConfig().WithEndpoint(endpoint)
 	return &Table{
 		tableName: tableName,
-		client:    dynamodb.New(sess),
+		client:    dynamodb.New(sess, cfg),
 	}
 }
