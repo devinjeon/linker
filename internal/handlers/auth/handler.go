@@ -48,11 +48,6 @@ type Auth struct {
 	Token oauth2.Token
 }
 
-func (h *Handlers) getSession(c *gin.Context) sessions.Session {
-	session := sessions.Default(c)
-	return session
-}
-
 func generateState() (string, error) {
 	length := 32
 	b := make([]byte, length)
@@ -67,17 +62,14 @@ func generateState() (string, error) {
 
 // SignIn is a handler to sign in.
 func (h *Handlers) SignIn(c *gin.Context) {
-	session := h.getSession(c)
 	state, err := generateState()
 	if err != nil {
 		c.AbortWithError(500, err)
 	}
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("state", state, 0, "/", "", false, true)
+
 	c.SetCookie("referrer", c.Request.Referer(), 0, "/", "", false, true)
-	if err := session.Save(); err != nil {
-		c.AbortWithError(500, err)
-	}
 
 	authorizeURL := h.oauth2.AuthCodeURL(state, oauth2.AccessTypeOnline)
 
@@ -87,7 +79,9 @@ func (h *Handlers) SignIn(c *gin.Context) {
 // SignOut is a handler to sign out.
 func (h *Handlers) SignOut(c *gin.Context) {
 	c.SetCookie("is_logged_in", "false", -1, "/", "", false, false)
-	session := h.getSession(c)
+
+	// Clear session data
+	session := sessions.Default(c)
 	session.Clear()
 	if err := session.Save(); err != nil {
 		c.AbortWithError(500, err)
@@ -129,13 +123,6 @@ func (h *Handlers) userInfo(token *oauth2.Token) (User, error) {
 
 // Exchange is a handler to exchange token between OAuth2 service and Linker.
 func (h *Handlers) Exchange(c *gin.Context) {
-	defer func() {
-		if r := recover(); r != nil {
-			c.String(500, "Error: %v", r.(error))
-			return
-		}
-	}()
-
 	// Get and Delete cookie values
 	state, _ := c.Cookie("state")
 	referrer, _ := c.Cookie("referrer")
@@ -180,7 +167,7 @@ func (h *Handlers) Exchange(c *gin.Context) {
 	user := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%v", userID)))
 
 	// Save user and token to session
-	session := h.getSession(c)
+	session := sessions.Default(c)
 	session.Clear()
 	session.Set("user", user)
 	session.Set("token", token)
@@ -208,8 +195,9 @@ func (h *Handlers) Exchange(c *gin.Context) {
 // RequireAuth is a middleware to check if the current user is authenticated
 func (h *Handlers) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session := h.getSession(c)
+		session := sessions.Default(c)
 
+		// Check session data
 		isValid := true
 		user, ok := session.Get("user").(string)
 		if !ok || user == "" {
