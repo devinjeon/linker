@@ -69,8 +69,9 @@ func (h *Handlers) SignIn(c *gin.Context) {
 	if err != nil {
 		c.AbortWithError(500, err)
 	}
-	session.Set("state", state)
-	session.Set("referrer", c.Request.Referer())
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("state", state, 0, "/", "", false, true)
+	c.SetCookie("referrer", c.Request.Referer(), 0, "/", "", false, true)
 	if err := session.Save(); err != nil {
 		c.AbortWithError(500, err)
 	}
@@ -131,6 +132,12 @@ func (h *Handlers) Exchange(c *gin.Context) {
 		}
 	}()
 
+	// Get and Delete cookie values
+	state, _ := c.Cookie("state")
+	referrer, _ := c.Cookie("referrer")
+	c.SetCookie("state", "", -1, "", "", false, true)
+	c.SetCookie("referrer", "", -1, "", "", false, true)
+
 	// Check code from OAuth2 service
 	code := c.Query("code")
 	if code == "" {
@@ -139,8 +146,7 @@ func (h *Handlers) Exchange(c *gin.Context) {
 	}
 
 	// Check state
-	session := h.getSession(c)
-	if session.Get("state") != c.Query("state") {
+	if state != c.Query("state") {
 		c.AbortWithStatus(400)
 		return
 	}
@@ -170,6 +176,7 @@ func (h *Handlers) Exchange(c *gin.Context) {
 	user := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%v", userID)))
 
 	// Save user and token to session
+	session := h.getSession(c)
 	session.Clear()
 	session.Set("user", user)
 	session.Set("token", token)
@@ -180,8 +187,7 @@ func (h *Handlers) Exchange(c *gin.Context) {
 
 	// Get redirect URL
 	var redirectURL string
-	referrer, ok := session.Get("referrer").(string)
-	if ok && referrer != "" {
+	if referrer != "" {
 		redirectURL = referrer
 	} else {
 		redirectURL = h.redirectURL
